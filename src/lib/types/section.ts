@@ -1,0 +1,77 @@
+// Section-specific content type definitions
+// Each section type stores its content as JSONB — these define the expected shapes
+
+export interface CoverPageContent {
+  client_name?: string;
+  client_address?: string;
+  project_label?: string;
+  cover_template?: "photo" | "no_photo";
+  cover_photo_url?: string;
+}
+
+export interface IntroductionContent {
+  body?: string; // HTML from TipTap
+}
+
+export interface FirmBackgroundContent {
+  narrative?: string; // HTML from TipTap
+  // Case studies are stored in proposal_case_studies junction table
+}
+
+export interface KeyPersonnelContent {
+  // Team members stored in proposal_team_members junction table
+  // Org chart positions stored in hierarchy_position on each member
+  org_chart_image?: string; // URL to a custom org chart image
+}
+
+export interface ProjectScheduleContent {
+  files?: Array<{
+    url: string;
+    path: string;
+    filename: string;
+    type: string;
+  }>;
+  output_mode?: "raw" | "ai_only" | "both";
+  execution_strategy?: {
+    project_duration?: string;
+    phases?: Array<{
+      name: string;
+      duration: string;
+      description: string;
+      milestones: string[];
+    }>;
+    critical_path?: string[];
+    approach_narrative?: string;
+  };
+}
+
+export interface SiteLogisticsContent {
+  body?: string; // HTML from TipTap
+  // EMR data comes from emr_ratings table
+}
+
+export interface QAQCContent {
+  quality_assurance?: string; // HTML
+  quality_control?: string; // HTML
+  commissioning?: string; // HTML
+}
+
+export interface CloseoutContent {
+  body?: string; // HTML from TipTap
+}
+
+export interface ReferenceCheckContent {
+  // References stored in proposal_references junction table
+}
+
+export interface InterviewPanelContent {
+  // Auto-generated from proposal_team_members — no user input
+}
+
+export interface ProjectCostContent {
+  // Cost items stored in proposal_cost_items table
+}
+
+export interface ExecutiveSummaryContent {
+  body?: string; // HTML from TipTap
+}

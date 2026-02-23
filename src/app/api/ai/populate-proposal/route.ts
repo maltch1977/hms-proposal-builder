@@ -431,9 +431,22 @@ export async function POST(request: NextRequest) {
       ...fullyAddressedIds,
       ...(parsed.requirements_addressed || []).map((id: string) => normalizeId(id)).filter((id: string) => !needsInputIds.has(id)),
     ]);
-    const updatedReqs = rfpRequirements.map((r) =>
-      addressedIds.has(normalizeId(r.id)) ? { ...r, auto_filled: true } : r
-    );
+    // Build a lookup: req_id → actual section_slug from where the mark was placed
+    const mappingSectionByReqId: Record<string, string> = {};
+    for (const m of requirementMappings) {
+      mappingSectionByReqId[normalizeId(m.req_id)] = m.section_slug;
+    }
+
+    const updatedReqs = rfpRequirements.map((r) => {
+      const nid = normalizeId(r.id);
+      const actualSlug = mappingSectionByReqId[nid];
+      return {
+        ...r,
+        auto_filled: addressedIds.has(nid) ? true : r.auto_filled,
+        // Update section_slug to match where the AI actually placed the content
+        ...(actualSlug ? { section_slug: actualSlug } : {}),
+      };
+    });
 
     // Build mark text snapshots for auto-detection of human edits
     const markSnapshots: Record<string, string> = {};

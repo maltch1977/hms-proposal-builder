@@ -437,7 +437,7 @@ export async function POST(request: NextRequest) {
 
     // Build mark text snapshots for auto-detection of human edits
     const markSnapshots: Record<string, string> = {};
-    const markTextRegex = /<mark\s+[^>]*data-req-id="([^"]+)"[^>]*>(.*?)<\/mark>/gs;
+    const markTextRegex = /<mark\s+[^>]*data-req-id="([^"]+)"[^>]*>([\s\S]*?)<\/mark>/g;
     const stripHtmlRegex = /<[^>]+>/g;
     for (const [, sectionContent] of Object.entries(parsed.sections)) {
       for (const [, html] of Object.entries(sectionContent as Record<string, string>)) {

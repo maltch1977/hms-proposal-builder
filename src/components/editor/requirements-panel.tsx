@@ -26,6 +26,7 @@ interface RequirementsPanelProps {
   onClickReq?: (reqId: string) => void;
   enabledSections?: EnabledSectionInfo[];
   deadline?: string | null;
+  isCollaboratorOnly?: boolean;
 }
 
 export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelProps>(
@@ -40,6 +41,7 @@ export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelPro
       onClickReq,
       enabledSections = [],
       deadline,
+      isCollaboratorOnly = false,
     },
     ref
   ) {
@@ -244,31 +246,27 @@ export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelPro
                         }`}
                         onClick={() => handleCardClick(req.id)}
                       >
-                        <Checkbox
-                          checked={req.auto_filled}
-                          onCheckedChange={() => onToggle(req.id)}
-                          className="mt-0.5"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className={`flex-1 min-w-0 overflow-hidden ${req.auto_filled ? "line-through" : ""}`}>
+                        {!isCollaboratorOnly && (
+                          <Checkbox
+                            checked={req.auto_filled}
+                            onCheckedChange={() => onToggle(req.id)}
+                            className="mt-0.5"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <div className={`flex-1 min-w-0 overflow-hidden`}>
                           <p
-                            className={`text-xs leading-relaxed break-words ${
-                              req.auto_filled
-                                ? "text-muted-foreground"
-                                : "text-foreground"
-                            }`}
+                            className={`text-xs leading-relaxed break-words text-foreground`}
                           >
                             {req.description}
                           </p>
                           {mapping?.note && (
                             <p className={`text-[11px] leading-snug mt-1 ${
-                              req.auto_filled
-                                ? "text-muted-foreground"
-                                : mapping.req_type === "needs_input"
-                                  ? "text-amber-700 dark:text-amber-400 font-medium"
-                                  : "text-muted-foreground/80 italic"
+                              mapping.req_type === "needs_input"
+                                ? "text-amber-700 dark:text-amber-400 font-medium"
+                                : "text-muted-foreground/80 italic"
                             }`}>
-                              {!req.auto_filled && mapping.req_type === "needs_input" && (
+                              {mapping.req_type === "needs_input" && (
                                 <span className="inline-block mr-1">→</span>
                               )}
                               {mapping.note}
@@ -290,11 +288,13 @@ export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelPro
                           : "border-border bg-card"
                       }`}
                     >
-                      <Checkbox
-                        checked={req.auto_filled}
-                        onCheckedChange={() => onToggle(req.id)}
-                        className="mt-0.5"
-                      />
+                      {!isCollaboratorOnly && (
+                        <Checkbox
+                          checked={req.auto_filled}
+                          onCheckedChange={() => onToggle(req.id)}
+                          className="mt-0.5"
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <p
                           className={`text-xs leading-relaxed ${

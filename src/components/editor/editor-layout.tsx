@@ -188,12 +188,13 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
         const originalText = markSnapshots[mapping.req_id] || markSnapshots[`req_${mapping.req_id}`];
         if (!originalText) continue;
 
-        // Get current text (strip HTML)
-        const currentText = marks.map((el) => el.textContent || "").join("").trim();
+        // Get current text, normalize whitespace for robust comparison
+        const normalize = (s: string) => s.replace(/\s+/g, " ").trim();
+        const currentText = normalize(marks.map((el) => el.textContent || "").join(""));
         if (!currentText) continue;
 
         // If text has changed from the original AI-generated text → mark as addressed
-        if (currentText !== originalText) {
+        if (currentText !== normalize(originalText)) {
           upgraded.push(mapping.req_id);
           // Update the DOM immediately for visual feedback
           marks.forEach((el) => {
@@ -724,6 +725,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
             onClickReq={handleClickReq}
             enabledSections={enabledSections}
             deadline={proposal.deadline}
+            isCollaboratorOnly={isCollaboratorOnly}
           />
         )}
         <PreviewPanel proposalId={proposalId} open={showPreview} onOpenChange={setShowPreview} />

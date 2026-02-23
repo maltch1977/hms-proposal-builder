@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Lock } from "lucide-react";
 
-const SHARE_EMAIL = "client@hmsproposals.com";
+const SHARE_EMAIL = "clientreview@hmscommercial.com";
 const SHARE_PASSWORD = "hmsproposal";
 
 export default function SharePage({

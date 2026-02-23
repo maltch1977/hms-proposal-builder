@@ -25,9 +25,10 @@ import type { QualityCheckIssue, LanguageSuggestion, RFPRequirement, Requirement
 
 interface EditorLayoutProps {
   proposalId: string;
+  isCollaboratorOnly?: boolean;
 }
 
-export function EditorLayout({ proposalId }: EditorLayoutProps) {
+export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnlyProp }: EditorLayoutProps) {
   const {
     proposal,
     sections,
@@ -40,7 +41,7 @@ export function EditorLayout({ proposalId }: EditorLayoutProps) {
     deleteSection,
   } = useProposal(proposalId);
   const { profile, signOut } = useAuth();
-  const isCollaboratorOnly = profile?.role === "proposal_user";
+  const isCollaboratorOnly = isCollaboratorOnlyProp ?? profile?.role === "proposal_user";
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showRequirements, setShowRequirements] = useState<boolean | null>(null);

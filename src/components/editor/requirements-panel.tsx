@@ -242,9 +242,23 @@ export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelPro
                     const isActive = activeReqId === req.id;
                     const hasMapping = !!mapping;
 
-                    // Action note: from AI mapping note, or generate a default
+                    // Action note: from AI mapping note, or section-specific instruction
+                    const sectionActions: Record<string, string> = {
+                      key_personnel: "Add team members with their roles, experience, and certifications in the Key Personnel section below",
+                      project_cost: "Enter pricing and line items in the Project Cost section below",
+                      project_schedule: "Add timeline, phases, and person-hours in the Project Schedule section below",
+                      reference_check: "Add project references with contact info in the Reference Check section below",
+                      interview_panel: "Prepare interview panel details in the Interview Panel section below",
+                      cover_page: "Update cover page details below",
+                      introduction: "Edit the Introduction section below to address this",
+                      firm_background: "Edit the Firm Background section below to address this",
+                      site_logistics: "Edit the Site Logistics section below to address this",
+                      qaqc_commissioning: "Edit the QA/QC section below to address this",
+                      closeout: "Edit the Closeout section below to address this",
+                      executive_summary: "Edit the Executive Summary section below to address this",
+                    };
                     const actionNote = mapping?.note || (
-                      !hasMapping ? `Review the ${sectionName} section for this requirement` : ""
+                      !hasMapping ? (sectionActions[slug] || `Click to navigate to the ${sectionName} section`) : ""
                     );
 
                     return (

@@ -164,6 +164,67 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     return !!meta?.ai_populated;
   }, [proposal?.metadata]);
 
+  // Original mark text snapshots for detecting human edits
+  const markSnapshots = useMemo<Record<string, string>>(() => {
+    const meta = proposal?.metadata as Record<string, unknown> | null;
+    return (meta?.mark_snapshots as Record<string, string>) || {};
+  }, [proposal?.metadata]);
+
+  // Auto-detect when needs_input marks have been edited → transition to addressed
+  useEffect(() => {
+    if (!editorContainerRef.current || !requirementMappings.length || !Object.keys(markSnapshots).length) return;
+
+    const timer = setInterval(() => {
+      const container = editorContainerRef.current;
+      if (!container) return;
+
+      const needsInputMappings = requirementMappings.filter((m) => m.req_type === "needs_input");
+      const upgraded: string[] = [];
+
+      for (const mapping of needsInputMappings) {
+        const marks = findAllMarksByReqId(container, mapping.req_id);
+        if (marks.length === 0) continue;
+
+        const originalText = markSnapshots[mapping.req_id] || markSnapshots[`req_${mapping.req_id}`];
+        if (!originalText) continue;
+
+        // Get current text (strip HTML)
+        const currentText = marks.map((el) => el.textContent || "").join("").trim();
+        if (!currentText) continue;
+
+        // If text has changed from the original AI-generated text → mark as addressed
+        if (currentText !== originalText) {
+          upgraded.push(mapping.req_id);
+          // Update the DOM immediately for visual feedback
+          marks.forEach((el) => {
+            el.setAttribute("data-req-type", "addressed");
+            el.classList.remove("requirement-mark--needs-input");
+            el.classList.add("requirement-mark--addressed");
+          });
+        }
+      }
+
+      // Persist upgraded mappings to metadata
+      if (upgraded.length > 0) {
+        const upgradedSet = new Set(upgraded);
+        const updatedMappings = requirementMappings.map((m) =>
+          upgradedSet.has(m.req_id) ? { ...m, req_type: "addressed" as const } : m
+        );
+        const updatedReqs = rfpRequirements.map((r) =>
+          upgradedSet.has(r.id) ? { ...r, auto_filled: true } : r
+        );
+        const newMetadata = {
+          ...((proposal?.metadata as Record<string, unknown>) || {}),
+          requirement_mappings: updatedMappings,
+          rfp_requirements: updatedReqs,
+        } as unknown as import("@/lib/types/database").Json;
+        updateProposal({ metadata: newMetadata });
+      }
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [requirementMappings, markSnapshots, rfpRequirements, findAllMarksByReqId, proposal?.metadata, updateProposal]);
+
   const sectionReviews = useMemo<Record<string, boolean>>(() => {
     const meta = proposal?.metadata as Record<string, unknown> | null;
     return (meta?.section_reviews as Record<string, boolean>) || {};

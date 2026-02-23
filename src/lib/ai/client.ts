@@ -8,6 +8,7 @@ export function getAIClient(): Anthropic {
     client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
       timeout: 10 * 60 * 1000, // 10 minutes for large document analysis
+      maxRetries: 3,
     });
   }
   return client;
@@ -118,6 +119,17 @@ export async function analyzeDocument(
 
   const textBlock = response.content.find((b) => b.type === "text");
   return textBlock ? textBlock.text : "";
+}
+
+/**
+ * Strip markdown code fences from AI responses before JSON.parse.
+ */
+export function stripCodeFences(text: string): string {
+  let cleaned = text.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:\w+)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  }
+  return cleaned;
 }
 
 /**

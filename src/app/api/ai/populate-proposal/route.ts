@@ -435,6 +435,24 @@ export async function POST(request: NextRequest) {
       addressedIds.has(normalizeId(r.id)) ? { ...r, auto_filled: true } : r
     );
 
+    // Build mark text snapshots for auto-detection of human edits
+    const markSnapshots: Record<string, string> = {};
+    const markTextRegex = /<mark\s+[^>]*data-req-id="([^"]+)"[^>]*>(.*?)<\/mark>/gs;
+    const stripHtmlRegex = /<[^>]+>/g;
+    for (const [, sectionContent] of Object.entries(parsed.sections)) {
+      for (const [, html] of Object.entries(sectionContent as Record<string, string>)) {
+        if (typeof html !== "string") continue;
+        markTextRegex.lastIndex = 0;
+        let mt;
+        while ((mt = markTextRegex.exec(html)) !== null) {
+          const reqId = normalizeId(mt[1]);
+          const text = mt[2].replace(stripHtmlRegex, "").trim();
+          if (text && !markSnapshots[reqId]) markSnapshots[reqId] = text;
+        }
+      }
+    }
+    console.log(`[populate] ${Object.keys(markSnapshots).length} mark snapshots stored`);
+
     const updatedMetadata = {
       ...meta,
       ai_populated: true,
@@ -442,6 +460,7 @@ export async function POST(request: NextRequest) {
       content_gaps: parsed.content_gaps || [],
       rfp_requirements: updatedReqs,
       requirement_mappings: requirementMappings,
+      mark_snapshots: markSnapshots,
     } as unknown as Json;
 
     await supabase

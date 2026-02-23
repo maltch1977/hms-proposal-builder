@@ -600,8 +600,8 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
         saveStatus={saveStatus}
         onTogglePreview={() => setShowPreview(!showPreview)}
         showPreview={showPreview}
-        onExport={handleExport}
-        checkingQuality={checkingQuality}
+        onExport={isCollaboratorOnly ? doExport : handleExport}
+        checkingQuality={isCollaboratorOnly ? false : checkingQuality}
         hasRequirements={hasRequirements}
         requirements={rfpRequirements}
         requirementMappings={requirementMappings}

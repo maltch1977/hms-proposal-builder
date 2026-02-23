@@ -702,8 +702,8 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
           userRole={(profile?.role || "proposal_user") as UserRole}
           proposalId={proposalId}
           sectionNameOverrides={sectionNameOverrides}
-          fieldAttributions={fieldAttributions}
-          fieldHighlights={fieldHighlights}
+          fieldAttributions={isCollaboratorOnly ? {} : fieldAttributions}
+          fieldHighlights={isCollaboratorOnly ? {} : fieldHighlights}
         />
         {showChanges && (
           <ChangesPanel

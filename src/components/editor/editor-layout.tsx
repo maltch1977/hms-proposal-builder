@@ -39,7 +39,8 @@ export function EditorLayout({ proposalId }: EditorLayoutProps) {
     addSection,
     deleteSection,
   } = useProposal(proposalId);
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
+  const isCollaboratorOnly = profile?.role === "proposal_user";
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showRequirements, setShowRequirements] = useState<boolean | null>(null);
@@ -606,6 +607,8 @@ export function EditorLayout({ proposalId }: EditorLayoutProps) {
         onToggleChanges={() => setShowChanges(!showChanges)}
         showChanges={showChanges}
         collaborators={collaborators}
+        isCollaboratorOnly={isCollaboratorOnly}
+        onSignOut={signOut}
       />
       <div ref={layoutContainerRef} className="relative flex flex-1 overflow-hidden">
         <SectionSidebar

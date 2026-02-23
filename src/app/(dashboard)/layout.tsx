@@ -18,11 +18,19 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  const isCollaboratorOnly = profile?.role === "proposal_user";
+
   return (
     <AuthProvider>
       <OrgProvider>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar />
+          {!isCollaboratorOnly && <Sidebar />}
           <main className="flex flex-1 flex-col overflow-hidden">
             {children}
           </main>

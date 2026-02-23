@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { StatusBadge } from "@/components/proposals/status-badge";
 import { AutoSaveIndicator } from "@/components/editor/auto-save-indicator";
-import { ArrowLeft, Eye, Download, Loader2, ClipboardCheck, ChevronDown, CircleCheck, CircleAlert, Circle, History } from "lucide-react";
+import { ArrowLeft, Eye, Download, Loader2, ClipboardCheck, ChevronDown, CircleCheck, CircleAlert, Circle, History, LogOut } from "lucide-react";
 import type { Tables } from "@/lib/types/database";
 import type { ProposalStatus } from "@/lib/utils/constants";
 import type { RFPRequirement, RequirementMapping } from "@/lib/ai/types";
@@ -39,6 +39,8 @@ interface EditorTopbarProps {
   onToggleChanges?: () => void;
   showChanges?: boolean;
   collaborators?: Collaborator[];
+  isCollaboratorOnly?: boolean;
+  onSignOut?: () => Promise<void>;
 }
 
 function getInitials(name: string) {
@@ -63,6 +65,8 @@ export function EditorTopbar({
   onToggleChanges,
   showChanges = false,
   collaborators = [],
+  isCollaboratorOnly = false,
+  onSignOut,
 }: EditorTopbarProps) {
   const mappingByReqId = requirementMappings.reduce<Record<string, RequirementMapping>>(
     (acc, m) => { acc[m.req_id] = m; return acc; }, {}
@@ -73,11 +77,17 @@ export function EditorTopbar({
   return (
     <header className="flex h-14 items-center justify-between border-b border-border/60 bg-card/80 backdrop-blur-xl px-5">
       <div className="flex items-center gap-3">
-        <Link href="/proposals">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
+        {isCollaboratorOnly ? (
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onSignOut}>
+            <LogOut className="h-4 w-4" />
           </Button>
-        </Link>
+        ) : (
+          <Link href="/proposals">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+        )}
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <h1 className="text-[15px] tracking-[-0.01em] font-semibold text-foreground truncate max-w-[300px]">

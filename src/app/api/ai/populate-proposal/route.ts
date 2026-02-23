@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateText } from "@/lib/ai/client";
+import { generateText, stripCodeFences } from "@/lib/ai/client";
 import { PROPOSAL_POPULATE_SYSTEM } from "@/lib/ai/prompts";
 import type { Json } from "@/lib/types/database";
 import type { GeneratedSectionContent, ContentGap, RFPRequirement, RequirementMapping } from "@/lib/ai/types";
+
+export const maxDuration = 120;
 
 // Strip HTML tags and take first N words as a voice sample
 function extractVoiceSample(html: string | null | undefined, maxWords = 200): string {
@@ -220,9 +222,7 @@ export async function POST(request: NextRequest) {
     };
 
     try {
-      // Strip any markdown code fences if present
-      const cleaned = result.replace(/^```(?:json)?\s*\n?/m, "").replace(/\n?```\s*$/m, "");
-      parsed = JSON.parse(cleaned);
+      parsed = JSON.parse(stripCodeFences(result));
       // Log mark tag presence for debugging
       const markCount = (JSON.stringify(parsed.sections).match(/<mark\s/g) || []).length;
       console.log(`[populate] AI response parsed. Sections: ${Object.keys(parsed.sections).length}, Mark tags found: ${markCount}, Notes: ${Object.keys(parsed.requirement_notes || {}).length}`);

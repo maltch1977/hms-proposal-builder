@@ -125,16 +125,14 @@ export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelPro
 
     const handleCardClick = useCallback(
       (req: RFPRequirement) => {
-        const mapping = mappingByReqId[req.id];
-        if (mapping) {
-          // Has a mark in the content — use connector system
-          onClickReq?.(req.id);
+        // Always use connector system — it handles marks, targets, and fallback navigation
+        if (onClickReq) {
+          onClickReq(req.id);
         } else {
-          // No mark — navigate to the section
           onNavigateToSection(req.section_slug);
         }
       },
-      [mappingByReqId, onClickReq, onNavigateToSection]
+      [onClickReq, onNavigateToSection]
     );
 
     const handleToggleDone = useCallback(
@@ -244,18 +242,18 @@ export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelPro
 
                     // Action note: from AI mapping note, or section-specific instruction
                     const sectionActions: Record<string, string> = {
-                      key_personnel: "Add team members with their roles, experience, and certifications in the Key Personnel section below",
-                      project_cost: "Enter pricing and line items in the Project Cost section below",
-                      project_schedule: "Add timeline, phases, and person-hours in the Project Schedule section below",
-                      reference_check: "Add project references with contact info in the Reference Check section below",
-                      interview_panel: "Prepare interview panel details in the Interview Panel section below",
-                      cover_page: "Update cover page details below",
-                      introduction: "Edit the Introduction section below to address this",
-                      firm_background: "Edit the Firm Background section below to address this",
-                      site_logistics: "Edit the Site Logistics section below to address this",
-                      qaqc_commissioning: "Edit the QA/QC section below to address this",
-                      closeout: "Edit the Closeout section below to address this",
-                      executive_summary: "Edit the Executive Summary section below to address this",
+                      key_personnel: "Click here to go to Key Personnel — use \"Add Team Member\" → \"Create New Person\" to add each person with their role and experience",
+                      project_cost: "Click here to go to Project Cost — upload your pricing document (PDF, Excel, or Word)",
+                      project_schedule: "Click here to go to Project Schedule — upload your Gantt chart or fill in the execution strategy",
+                      reference_check: "Click here to go to Reference Check — use \"Add Reference\" → \"Create New Reference\" to add each contact with name, title, company, and phone",
+                      interview_panel: "Click here to go to Interview Panel — this auto-generates from your Key Personnel team members",
+                      cover_page: "Click here to go to Cover Page — update project name, client info, and cover photo",
+                      introduction: "Click here — edit the highlighted text directly in the Introduction section",
+                      firm_background: "Click here to go to Firm Background — edit the narrative above and use \"Add Case Study\" → \"Create New Case Study\" to add relevant past projects",
+                      site_logistics: "Click here — edit the highlighted text directly in the Site Logistics section",
+                      qaqc_commissioning: "Click here — edit the highlighted text directly in the QA/QC section",
+                      closeout: "Click here — edit the highlighted text directly in the Closeout section",
+                      executive_summary: "Click here — edit the highlighted text directly in the Executive Summary",
                     };
                     const actionNote = mapping?.note || (
                       !hasMapping ? (sectionActions[slug] || `Click to navigate to the ${sectionName} section`) : ""

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect, useCallback } from "react";
 import { User } from "lucide-react";
 import type { TeamMemberWithPersonnel } from "@/components/sections/key-personnel";
 
@@ -12,29 +11,29 @@ interface InterviewPanelProps {
 export function InterviewPanel({ proposalId }: InterviewPanelProps) {
   const [teamMembers, setTeamMembers] = useState<TeamMemberWithPersonnel[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
-  useEffect(() => {
-    const fetchTeam = async () => {
-      const { data } = await supabase
-        .from("proposal_team_members")
-        .select("*, personnel:personnel(*)")
-        .eq("proposal_id", proposalId)
-        .order("order_index");
-
-      if (data) {
+  const fetchTeam = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/proposals/${proposalId}/team-members`);
+      const json = await res.json();
+      if (json.members) {
         setTeamMembers(
-          data.map((m) => ({
+          json.members.map((m: Record<string, unknown>) => ({
             ...m,
-            personnel: (m as unknown as { personnel: TeamMemberWithPersonnel["personnel"] }).personnel,
-          }))
+            personnel: m.personnel,
+          })) as TeamMemberWithPersonnel[]
         );
       }
+    } catch {
+      // Ignore
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [proposalId]);
 
+  useEffect(() => {
     fetchTeam();
-  }, [proposalId, supabase]);
+  }, [fetchTeam]);
 
   if (loading) {
     return (

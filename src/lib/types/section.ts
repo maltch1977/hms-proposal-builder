@@ -22,6 +22,7 @@ export interface KeyPersonnelContent {
   // Team members stored in proposal_team_members junction table
   // Org chart positions stored in hierarchy_position on each member
   org_chart_image?: string; // URL to a custom org chart image
+  requirement_responses?: Record<string, string>;
 }
 
 export interface ProjectScheduleContent {
@@ -43,6 +44,7 @@ export interface ProjectScheduleContent {
     critical_path?: string[];
     approach_narrative?: string;
   };
+  requirement_responses?: Record<string, string>;
 }
 
 export interface SiteLogisticsContent {
@@ -62,14 +64,23 @@ export interface CloseoutContent {
 
 export interface ReferenceCheckContent {
   // References stored in proposal_references junction table
+  requirement_responses?: Record<string, string>;
 }
 
 export interface InterviewPanelContent {
   // Auto-generated from proposal_team_members — no user input
+  requirement_responses?: Record<string, string>;
 }
 
 export interface ProjectCostContent {
-  // Cost items stored in proposal_cost_items table
+  // Cost items stored in proposal_cost_items table (legacy)
+  files?: Array<{
+    url: string;
+    path: string;
+    filename: string;
+    type: string;
+  }>;
+  requirement_responses?: Record<string, string>;
 }
 
 export interface ExecutiveSummaryContent {

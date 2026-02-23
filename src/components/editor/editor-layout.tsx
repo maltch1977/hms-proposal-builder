@@ -334,6 +334,23 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     [rfpRequirements, proposal?.metadata, updateProposal]
   );
 
+  // Set requirement done/undone (used by orphan textareas in structured sections)
+  const handleSetRequirementDone = useCallback(
+    async (requirementId: string, done: boolean) => {
+      const req = rfpRequirements.find((r) => r.id === requirementId);
+      if (!req || req.auto_filled === done) return;
+      const updated = rfpRequirements.map((r) =>
+        r.id === requirementId ? { ...r, auto_filled: done } : r
+      );
+      const newMetadata = {
+        ...((proposal?.metadata as Record<string, unknown>) || {}),
+        rfp_requirements: updated,
+      } as unknown as import("@/lib/types/database").Json;
+      await updateProposal({ metadata: newMetadata });
+    },
+    [rfpRequirements, proposal?.metadata, updateProposal]
+  );
+
   const handleSectionClick = useCallback((sectionId: string) => {
     setActiveSectionId(sectionId);
     const el = document.getElementById(`section-${sectionId}`);
@@ -560,7 +577,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     [sections]
   );
 
-  // Click a requirement card → scroll editor to the matching mark + show connector
+  // Click a requirement card → scroll editor to the matching mark/target + show connector
   const handleClickReq = useCallback((reqId: string) => {
     // Toggle off if clicking the same card
     if (activeReqId === reqId) {
@@ -570,11 +587,32 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     setActiveReqId(reqId);
     const editor = editorContainerRef.current;
     if (!editor) return;
+
+    // Try inline mark first (narrative sections)
     const mark = findMarkByReqId(editor, reqId);
     if (mark) {
       mark.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
     }
-  }, [findMarkByReqId, activeReqId]);
+
+    // Try data-req-target anchor (structured sections)
+    const target = editor.querySelector<HTMLElement>(`[data-req-target="${reqId}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Fallback: navigate to the section
+    const req = rfpRequirements.find((r) => r.id === reqId);
+    if (req) {
+      const section = sections.find((s) => s.section_type.slug === req.section_slug);
+      if (section) {
+        setActiveSectionId(section.id);
+        const el = document.getElementById(`section-${section.id}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [findMarkByReqId, activeReqId, rfpRequirements, sections]);
 
   // Click on requirement marks in editor → connect to panel card
   // Uses document-level capture to avoid TipTap/ProseMirror swallowing events
@@ -585,9 +623,24 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
       const target = e.target as HTMLElement;
       const mark = target.closest?.("mark[data-req-id]");
 
+      // Also detect clicks on data-req-target elements (structured section anchors/textareas)
+      const reqTarget = target.closest?.("[data-req-target]");
+
       if (mark) {
         const rawReqId = mark.getAttribute("data-req-id");
         const reqId = normalizeMarkId(rawReqId);
+        if (reqId) {
+          setActiveReqId((prev) => prev === reqId ? null : reqId);
+          requestAnimationFrame(() => {
+            const panel = panelContainerRef.current;
+            if (panel) {
+              const card = panel.querySelector<HTMLElement>(`[data-req-card-id="${reqId}"]`);
+              card?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          });
+        }
+      } else if (reqTarget) {
+        const reqId = reqTarget.getAttribute("data-req-target");
         if (reqId) {
           setActiveReqId((prev) => prev === reqId ? null : reqId);
           requestAnimationFrame(() => {
@@ -658,7 +711,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
   }
 
   const saveStatus = saving ? "saving" : "idle";
-  const showConnectors = isAIPopulated && hasRequirements && requirementMappings.length > 0;
+  const showConnectors = isAIPopulated && hasRequirements;
 
   return (
     <div className="flex h-full flex-col">
@@ -704,6 +757,9 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
           sectionNameOverrides={sectionNameOverrides}
           fieldAttributions={isCollaboratorOnly ? {} : fieldAttributions}
           fieldHighlights={isCollaboratorOnly ? {} : fieldHighlights}
+          rfpRequirements={rfpRequirements}
+          requirementMappings={requirementMappings}
+          onRequirementDone={handleSetRequirementDone}
         />
         {showChanges && (
           <ChangesPanel

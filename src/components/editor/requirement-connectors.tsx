@@ -49,15 +49,17 @@ export function RequirementConnectors({
 
     const containerRect = container.getBoundingClientRect();
 
-    // Find the mark — try both ID formats
+    // Find the mark (narrative sections) or target anchor (structured sections)
     const mark =
       editorViewport.querySelector<HTMLElement>(`mark[data-req-id="${activeReqId}"]`) ||
-      editorViewport.querySelector<HTMLElement>(`mark[data-req-id="req_${activeReqId}"]`);
+      editorViewport.querySelector<HTMLElement>(`mark[data-req-id="req_${activeReqId}"]`) ||
+      editorViewport.querySelector<HTMLElement>(`[data-req-target="${activeReqId}"]`);
     if (!mark) {
       setLine(null);
       return;
     }
 
+    // Determine req type from mark attribute or from the target element's parent context
     const reqType =
       (mark.getAttribute("data-req-type") as "addressed" | "needs_input") ||
       "addressed";

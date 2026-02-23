@@ -8,6 +8,7 @@ import type { SectionWithType } from "@/lib/hooks/use-proposal";
 import type { UserRole } from "@/lib/utils/constants";
 import type { FieldAttribution } from "@/lib/utils/derive-field-attributions";
 import type { AttributedSegment } from "@/lib/utils/compute-author-highlights";
+import type { RFPRequirement, RequirementMapping } from "@/lib/ai/types";
 
 interface SectionEditorProps {
   sections: SectionWithType[];
@@ -20,6 +21,9 @@ interface SectionEditorProps {
   sectionNameOverrides?: Record<string, string>;
   fieldAttributions?: Record<string, FieldAttribution>;
   fieldHighlights?: Record<string, AttributedSegment[]>;
+  rfpRequirements?: RFPRequirement[];
+  requirementMappings?: RequirementMapping[];
+  onRequirementDone?: (reqId: string, done: boolean) => void;
 }
 
 export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
@@ -35,6 +39,9 @@ export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
       sectionNameOverrides = {},
       fieldAttributions = {},
       fieldHighlights = {},
+      rfpRequirements = [],
+      requirementMappings = [],
+      onRequirementDone,
     },
     ref
   ) {
@@ -64,6 +71,9 @@ export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
                   proposalId={proposalId}
                   fieldAttributions={fieldAttributions}
                   fieldHighlights={fieldHighlights}
+                  rfpRequirements={rfpRequirements}
+                  requirementMappings={requirementMappings}
+                  onRequirementDone={onRequirementDone}
                 />
               </SectionWrapper>
             ))}

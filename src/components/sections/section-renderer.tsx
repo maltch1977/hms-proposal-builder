@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { SectionWithType } from "@/lib/hooks/use-proposal";
 import type { Tables } from "@/lib/types/database";
 import type { TeamMemberWithPersonnel } from "@/components/sections/key-personnel";
@@ -29,9 +28,21 @@ import type {
   QAQCContent,
   CloseoutContent,
   ExecutiveSummaryContent,
+  ProjectCostContent,
 } from "@/lib/types/section";
 import type { FieldAttribution } from "@/lib/utils/derive-field-attributions";
 import type { AttributedSegment } from "@/lib/utils/compute-author-highlights";
+import type { RFPRequirement, RequirementMapping } from "@/lib/ai/types";
+import { SectionGuidance } from "@/components/sections/section-guidance";
+import { SectionFileUpload } from "@/components/sections/section-file-upload";
+
+const STRUCTURED_SECTION_SLUGS: Set<string> = new Set([
+  SECTION_SLUGS.KEY_PERSONNEL,
+  SECTION_SLUGS.PROJECT_COST,
+  SECTION_SLUGS.PROJECT_SCHEDULE,
+  SECTION_SLUGS.REFERENCE_CHECK,
+  SECTION_SLUGS.INTERVIEW_PANEL,
+]);
 
 interface SectionRendererProps {
   section: SectionWithType;
@@ -41,6 +52,9 @@ interface SectionRendererProps {
   proposalId: string;
   fieldAttributions?: Record<string, FieldAttribution>;
   fieldHighlights?: Record<string, AttributedSegment[]>;
+  rfpRequirements?: RFPRequirement[];
+  requirementMappings?: RequirementMapping[];
+  onRequirementDone?: (reqId: string, done: boolean) => void;
 }
 
 export function SectionRenderer({
@@ -51,6 +65,9 @@ export function SectionRenderer({
   proposalId,
   fieldAttributions = {},
   fieldHighlights = {},
+  rfpRequirements = [],
+  requirementMappings = [],
+  onRequirementDone,
 }: SectionRendererProps) {
   const slug = section.section_type.slug;
   const content = (section.content || {}) as Record<string, unknown>;
@@ -82,26 +99,48 @@ export function SectionRenderer({
     return result;
   }, [sectionId, fieldHighlights]);
 
+  // Requirements filtered for this section
+  const sectionRequirements = useMemo(
+    () => rfpRequirements.filter((r) => r.section_slug === slug),
+    [rfpRequirements, slug]
+  );
+  const sectionMappings = useMemo(
+    () => requirementMappings.filter((m) => m.section_slug === slug),
+    [requirementMappings, slug]
+  );
+  const isStructured = STRUCTURED_SECTION_SLUGS.has(slug);
+  const requirementResponses = (content.requirement_responses || {}) as Record<string, string>;
+
+  const handleRequirementResponse = useCallback(
+    (reqId: string, value: string) => {
+      const updated = { ...content, requirement_responses: { ...requirementResponses, [reqId]: value } };
+      onUpdateContent(updated);
+      // Auto-mark requirement done when non-empty, undone when cleared
+      const isDone = value.trim().length > 0;
+      onRequirementDone?.(reqId, isDone);
+    },
+    [content, requirementResponses, onUpdateContent, onRequirementDone]
+  );
+
   // Team members state for Key Personnel section
   const [teamMembers, setTeamMembers] = useState<TeamMemberWithPersonnel[]>([]);
-  const supabase = createClient();
 
   const fetchTeamMembers = useCallback(async () => {
-    const { data } = await supabase
-      .from("proposal_team_members")
-      .select("*, personnel:personnel(*)")
-      .eq("proposal_id", proposalId)
-      .order("order_index");
-
-    if (data) {
-      setTeamMembers(
-        data.map((m) => ({
-          ...m,
-          personnel: (m as unknown as { personnel: Tables<"personnel"> }).personnel,
-        }))
-      );
+    try {
+      const res = await fetch(`/api/proposals/${proposalId}/team-members`);
+      const json = await res.json();
+      if (json.members) {
+        setTeamMembers(
+          json.members.map((m: Record<string, unknown>) => ({
+            ...m,
+            personnel: m.personnel,
+          })) as TeamMemberWithPersonnel[]
+        );
+      }
+    } catch {
+      // Ignore
     }
-  }, [proposalId, supabase]);
+  }, [proposalId]);
 
   // Fetch team members only for key_personnel section
   useEffect(() => {
@@ -121,18 +160,43 @@ export function SectionRenderer({
     [onUpdateSection]
   );
 
+  // Guidance block for structured sections — renders orphan textareas + anchor targets
+  const guidanceBlock = isStructured && sectionRequirements.length > 0 ? (
+    <SectionGuidance
+      requirements={sectionRequirements}
+      requirementMappings={sectionMappings}
+      responses={requirementResponses}
+      onResponseChange={handleRequirementResponse}
+    />
+  ) : null;
+
+  // Universal file upload for every section (except cover page and TOC)
+  const sectionFiles = ((content.files || []) as Array<{ url: string; path: string; filename: string; type: string }>);
+  const showFileUpload = slug !== SECTION_SLUGS.COVER_PAGE && slug !== SECTION_SLUGS.TABLE_OF_CONTENTS;
+  const fileUploadBlock = showFileUpload ? (
+    <SectionFileUpload
+      files={sectionFiles}
+      onChange={(files) => onUpdateContent({ ...content, files })}
+    />
+  ) : null;
+
+  // Project Cost already has its own file upload — skip the universal one
+  const skipUniversalUpload = slug === SECTION_SLUGS.PROJECT_COST;
+
+  let sectionContent: React.ReactNode;
   switch (slug) {
     case SECTION_SLUGS.COVER_PAGE:
-      return (
+      sectionContent = (
         <CoverPage
           content={content as CoverPageContent}
           onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
           proposalId={proposalId}
         />
       );
+      break;
 
     case SECTION_SLUGS.INTRODUCTION:
-      return (
+      sectionContent = (
         <Introduction
           content={content as IntroductionContent}
           onChange={(c, ct) => onUpdateContent(c as unknown as Record<string, unknown>, ct)}
@@ -143,12 +207,14 @@ export function SectionRenderer({
           fieldHighlights={sectionHighlights}
         />
       );
+      break;
 
     case SECTION_SLUGS.TABLE_OF_CONTENTS:
-      return <TableOfContents sections={sections} />;
+      sectionContent = <TableOfContents sections={sections} />;
+      break;
 
     case SECTION_SLUGS.FIRM_BACKGROUND:
-      return (
+      sectionContent = (
         <FirmBackground
           content={content as FirmBackgroundContent}
           onChange={(c, ct) => onUpdateContent(c as unknown as Record<string, unknown>, ct)}
@@ -160,32 +226,41 @@ export function SectionRenderer({
           fieldHighlights={sectionHighlights}
         />
       );
+      break;
 
     case SECTION_SLUGS.KEY_PERSONNEL:
-      return (
-        <KeyPersonnel
-          proposalId={proposalId}
-          teamMembers={teamMembers}
-          onTeamChange={fetchTeamMembers}
-          content={content as KeyPersonnelContent}
-          onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
-          sectionTypeId={sectionTypeId}
-          libraryItemId={libraryItemId}
-          onLibrarySelect={handleLibrarySelect}
-        />
+      sectionContent = (
+        <>
+          {guidanceBlock}
+          <KeyPersonnel
+            proposalId={proposalId}
+            teamMembers={teamMembers}
+            onTeamChange={fetchTeamMembers}
+            content={content as KeyPersonnelContent}
+            onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
+            sectionTypeId={sectionTypeId}
+            libraryItemId={libraryItemId}
+            onLibrarySelect={handleLibrarySelect}
+          />
+        </>
       );
+      break;
 
     case SECTION_SLUGS.PROJECT_SCHEDULE:
-      return (
-        <ProjectSchedule
-          content={content as ProjectScheduleContent}
-          onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
-          proposalId={proposalId}
-        />
+      sectionContent = (
+        <>
+          {guidanceBlock}
+          <ProjectSchedule
+            content={content as ProjectScheduleContent}
+            onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
+            proposalId={proposalId}
+          />
+        </>
       );
+      break;
 
     case SECTION_SLUGS.SITE_LOGISTICS:
-      return (
+      sectionContent = (
         <SiteLogistics
           content={content as SiteLogisticsContent}
           onChange={(c, ct) => onUpdateContent(c as unknown as Record<string, unknown>, ct)}
@@ -196,9 +271,10 @@ export function SectionRenderer({
           fieldHighlights={sectionHighlights}
         />
       );
+      break;
 
     case SECTION_SLUGS.QAQC_COMMISSIONING:
-      return (
+      sectionContent = (
         <QAQCCommissioning
           content={content as QAQCContent}
           onChange={(c, ct) => onUpdateContent(c as unknown as Record<string, unknown>, ct)}
@@ -209,9 +285,10 @@ export function SectionRenderer({
           fieldHighlights={sectionHighlights}
         />
       );
+      break;
 
     case SECTION_SLUGS.CLOSEOUT:
-      return (
+      sectionContent = (
         <Closeout
           content={content as CloseoutContent}
           onChange={(c, ct) => onUpdateContent(c as unknown as Record<string, unknown>, ct)}
@@ -222,18 +299,41 @@ export function SectionRenderer({
           fieldHighlights={sectionHighlights}
         />
       );
+      break;
 
     case SECTION_SLUGS.REFERENCE_CHECK:
-      return <ReferenceCheck proposalId={proposalId} />;
+      sectionContent = (
+        <>
+          {guidanceBlock}
+          <ReferenceCheck proposalId={proposalId} />
+        </>
+      );
+      break;
 
     case SECTION_SLUGS.INTERVIEW_PANEL:
-      return <InterviewPanel proposalId={proposalId} />;
+      sectionContent = (
+        <>
+          {guidanceBlock}
+          <InterviewPanel proposalId={proposalId} />
+        </>
+      );
+      break;
 
     case SECTION_SLUGS.PROJECT_COST:
-      return <ProjectCost proposalId={proposalId} />;
+      sectionContent = (
+        <>
+          {guidanceBlock}
+          <ProjectCost
+            content={content as ProjectCostContent}
+            onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
+            proposalId={proposalId}
+          />
+        </>
+      );
+      break;
 
     case SECTION_SLUGS.EXECUTIVE_SUMMARY:
-      return (
+      sectionContent = (
         <ExecutiveSummary
           content={content as ExecutiveSummaryContent}
           onChange={(c, ct) => onUpdateContent(c as unknown as Record<string, unknown>, ct)}
@@ -242,12 +342,26 @@ export function SectionRenderer({
           fieldHighlights={sectionHighlights}
         />
       );
+      break;
 
     default:
-      return (
+      sectionContent = (
         <div className="text-sm text-muted-foreground italic py-4">
           {section.section_type.display_name} editor — unknown section type
         </div>
       );
+      break;
   }
+
+  // Append universal file upload to every section (except cover page, TOC, and project cost which has its own)
+  if (fileUploadBlock && !skipUniversalUpload) {
+    return (
+      <>
+        {sectionContent}
+        {fileUploadBlock}
+      </>
+    );
+  }
+
+  return sectionContent;
 }

@@ -42,6 +42,11 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
   } = useProposal(proposalId);
   const { profile, signOut } = useAuth();
   const isCollaboratorOnly = isCollaboratorOnlyProp ?? profile?.role === "proposal_user";
+
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    window.location.href = "/login";
+  }, [signOut]);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showRequirements, setShowRequirements] = useState<boolean | null>(null);
@@ -609,7 +614,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
         showChanges={showChanges}
         collaborators={collaborators}
         isCollaboratorOnly={isCollaboratorOnly}
-        onSignOut={signOut}
+        onSignOut={handleSignOut}
       />
       <div ref={layoutContainerRef} className="relative flex flex-1 overflow-hidden">
         <SectionSidebar

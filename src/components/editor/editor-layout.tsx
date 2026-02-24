@@ -680,32 +680,16 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     }
   }, [activeReqId, findAllMarksByReqId]);
 
-  // Sync mark underline colors with current requirement status
-  useEffect(() => {
-    const editor = editorContainerRef.current;
-    if (!editor || rfpRequirements.length === 0) return;
-
-    // Build lookup: any form of the ID → done or not
-    const doneById = new Map<string, boolean>();
+  // Sync mark underline colors with requirement status via injected CSS
+  // (TipTap manages its own DOM so direct attribute changes get overwritten)
+  const doneMarkStyles = useMemo(() => {
+    const rules: string[] = [];
     for (const r of rfpRequirements) {
-      const done = !!r.auto_filled;
-      doneById.set(r.id, done);
-      doneById.set(r.id.toLowerCase(), done);
-      // Also store with req_ prefix in case marks use that format
-      doneById.set(`req_${r.id}`, done);
+      if (r.auto_filled) {
+        rules.push(`mark[data-req-id="${r.id}"],mark[data-req-id="req_${r.id}"]{border-color:#22c55e !important;}`);
+      }
     }
-
-    const allMarks = editor.querySelectorAll<HTMLElement>("mark[data-req-id]");
-    allMarks.forEach((mark) => {
-      const markId = mark.getAttribute("data-req-id") || "";
-      const done = doneById.get(markId) ?? doneById.get(markId.replace(/^req_/, ""));
-      if (done === undefined) return;
-
-      const newType = done ? "addressed" : "needs_input";
-      mark.setAttribute("data-req-type", newType);
-      mark.classList.remove("requirement-mark--addressed", "requirement-mark--needs-input");
-      mark.classList.add(done ? "requirement-mark--addressed" : "requirement-mark--needs-input");
-    });
+    return rules.join("");
   }, [rfpRequirements]);
 
   if (loading) {
@@ -743,6 +727,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
 
   return (
     <div className="flex h-full flex-col">
+      {doneMarkStyles && <style dangerouslySetInnerHTML={{ __html: doneMarkStyles }} />}
       <EditorTopbar
         proposal={proposal}
         saveStatus={saveStatus}

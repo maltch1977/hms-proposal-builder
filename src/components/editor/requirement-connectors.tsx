@@ -59,11 +59,6 @@ export function RequirementConnectors({
       return;
     }
 
-    // Determine req type from mark attribute or from the target element's parent context
-    const reqType =
-      (mark.getAttribute("data-req-type") as "addressed" | "needs_input") ||
-      "addressed";
-
     // Find the card
     const card = panelViewport.querySelector<HTMLElement>(
       `[data-req-card-id="${activeReqId}"]`
@@ -72,6 +67,10 @@ export function RequirementConnectors({
       setLine(null);
       return;
     }
+
+    // Derive status from the card's visual state (green border = done)
+    const cardIsDone = card.classList.contains("border-l-green-500");
+    const reqType = cardIsDone ? "addressed" : "needs_input";
 
     const markRect = mark.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();

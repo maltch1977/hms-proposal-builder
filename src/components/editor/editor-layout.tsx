@@ -680,6 +680,35 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     }
   }, [activeReqId, findAllMarksByReqId]);
 
+  // Sync mark underline colors with current requirement status
+  // (marks baked into HTML may say "needs_input" but the requirement is now "done")
+  useEffect(() => {
+    const editor = editorContainerRef.current;
+    if (!editor || rfpRequirements.length === 0) return;
+
+    const doneIds = new Set(
+      rfpRequirements.filter((r) => r.auto_filled).map((r) => r.id)
+    );
+
+    const allMarks = editor.querySelectorAll<HTMLElement>("mark[data-req-id]");
+    allMarks.forEach((mark) => {
+      const rawId = mark.getAttribute("data-req-id") || "";
+      const nid = rawId.replace(/^req_/i, "").replace(/^REQ-0*/, "");
+      const fullId = rfpRequirements.find((r) => r.id === rawId || r.id.replace(/^REQ-0*/, "") === nid)?.id;
+      if (!fullId) return;
+
+      const shouldBeAddressed = doneIds.has(fullId);
+      const currentType = mark.getAttribute("data-req-type");
+      const newType = shouldBeAddressed ? "addressed" : "needs_input";
+
+      if (currentType !== newType) {
+        mark.setAttribute("data-req-type", newType);
+        mark.classList.remove("requirement-mark--addressed", "requirement-mark--needs-input");
+        mark.classList.add(`requirement-mark--${newType.replace(/_/g, "-")}`);
+      }
+    });
+  }, [rfpRequirements]);
+
   if (loading) {
     return (
       <div className="flex h-screen flex-col">

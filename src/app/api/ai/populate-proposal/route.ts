@@ -431,10 +431,20 @@ export async function POST(request: NextRequest) {
       ...fullyAddressedIds,
       ...(parsed.requirements_addressed || []).map((id: string) => normalizeId(id)).filter((id: string) => !needsInputIds.has(id)),
     ]);
-    // Build a lookup: req_id → actual section_slug from where the mark was placed
+    // Build a lookup: req_id → earliest section_slug (by sidebar order) where a mark was placed
+    const sectionOrder: Record<string, number> = {};
+    for (let i = 0; i < sections.length; i++) {
+      const st = sections[i].section_types as unknown as { slug: string };
+      sectionOrder[st.slug] = i;
+    }
     const mappingSectionByReqId: Record<string, string> = {};
     for (const m of requirementMappings) {
-      mappingSectionByReqId[normalizeId(m.req_id)] = m.section_slug;
+      const nid = normalizeId(m.req_id);
+      const existing = mappingSectionByReqId[nid];
+      // Keep the earliest section in sidebar order
+      if (!existing || (sectionOrder[m.section_slug] ?? 999) < (sectionOrder[existing] ?? 999)) {
+        mappingSectionByReqId[nid] = m.section_slug;
+      }
     }
 
     const updatedReqs = rfpRequirements.map((r) => {

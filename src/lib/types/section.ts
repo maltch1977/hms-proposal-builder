@@ -49,7 +49,7 @@ export interface ProjectScheduleContent {
 
 export interface SiteLogisticsContent {
   body?: string; // HTML from TipTap
-  // EMR data comes from emr_ratings table
+  emr_entries?: Array<{ year: string; rating: string }>;
 }
 
 export interface QAQCContent {

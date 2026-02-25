@@ -66,7 +66,10 @@ export function SiteLogistics({
         <h4 className="text-sm font-medium text-foreground mb-3">
           Experience Modification Rating (EMR)
         </h4>
-        <EmrTable />
+        <EmrTable
+          entries={content.emr_entries || []}
+          onChange={(emr_entries) => onChange({ ...content, emr_entries })}
+        />
       </div>
     </div>
   );

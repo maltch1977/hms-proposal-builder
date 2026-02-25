@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/lib/providers/auth-provider";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,65 +11,114 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { Tables } from "@/lib/types/database";
+import { Plus, X } from "lucide-react";
 
-type EmrRating = Tables<"emr_ratings">;
+interface EmrEntry {
+  year: string;
+  rating: string;
+}
 
-export function EmrTable() {
-  const [ratings, setRatings] = useState<EmrRating[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { profile } = useAuth();
-  const supabase = createClient();
+interface EmrTableProps {
+  entries?: EmrEntry[];
+  onChange?: (entries: EmrEntry[]) => void;
+}
 
-  useEffect(() => {
-    if (!profile) return;
+export function EmrTable({ entries = [], onChange }: EmrTableProps) {
+  const [newYear, setNewYear] = useState("");
 
-    supabase
-      .from("emr_ratings")
-      .select("*")
-      .eq("organization_id", profile.organization_id)
-      .order("year", { ascending: false })
-      .then(({ data }) => {
-        setRatings(data || []);
-        setLoading(false);
-      });
-  }, [profile, supabase]);
+  const handleAddYear = () => {
+    const year = newYear.trim() || String(new Date().getFullYear());
+    if (entries.some((e) => e.year === year)) return;
+    onChange?.([...entries, { year, rating: "" }]);
+    setNewYear("");
+  };
 
-  if (loading) {
-    return <Skeleton className="h-24 w-full rounded-lg" />;
-  }
+  const handleRatingChange = (index: number, rating: string) => {
+    const updated = entries.map((e, i) => (i === index ? { ...e, rating } : e));
+    onChange?.(updated);
+  };
 
-  if (ratings.length === 0) {
+  const handleRemoveYear = (index: number) => {
+    onChange?.(entries.filter((_, i) => i !== index));
+  };
+
+  const sorted = [...entries].sort((a, b) => Number(b.year) - Number(a.year));
+
+  if (entries.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground italic">
-        No EMR ratings configured. Add them in Admin Settings.
-      </p>
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Add your EMR (Experience Modification Rate) for recent years.
+        </p>
+        <div className="flex items-center gap-2">
+          <Input
+            value={newYear}
+            onChange={(e) => setNewYear(e.target.value)}
+            placeholder={String(new Date().getFullYear())}
+            className="h-8 w-24 text-sm"
+          />
+          <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={handleAddYear}>
+            <Plus className="h-3.5 w-3.5" />
+            Add Year
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-hms-navy/5">
-            {ratings.map((r) => (
-              <TableHead key={r.id} className="text-center font-semibold">
-                {r.year}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow>
-            {ratings.map((r) => (
-              <TableCell key={r.id} className="text-center font-medium">
-                {r.rating}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableBody>
-      </Table>
+    <div className="space-y-2">
+      <div className="rounded-lg border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-hms-navy/5">
+              {sorted.map((e, i) => (
+                <TableHead key={i} className="text-center font-semibold">
+                  <div className="flex items-center justify-center gap-1">
+                    {e.year}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveYear(entries.indexOf(e))}
+                      className="text-muted-foreground hover:text-destructive ml-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              {sorted.map((e) => {
+                const origIndex = entries.indexOf(e);
+                return (
+                  <TableCell key={origIndex} className="text-center p-2">
+                    <Input
+                      value={e.rating}
+                      onChange={(ev) => handleRatingChange(origIndex, ev.target.value)}
+                      placeholder="e.g. 0.85"
+                      className="h-8 text-sm text-center"
+                    />
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          value={newYear}
+          onChange={(e) => setNewYear(e.target.value)}
+          placeholder={String(new Date().getFullYear())}
+          className="h-8 w-24 text-sm"
+        />
+        <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={handleAddYear}>
+          <Plus className="h-3.5 w-3.5" />
+          Add Year
+        </Button>
+      </div>
     </div>
   );
 }

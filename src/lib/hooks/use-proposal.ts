@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Tables, Json } from "@/lib/types/database";
 
 type Proposal = Tables<"proposals">;
@@ -70,30 +70,99 @@ export function useProposal(proposalId: string) {
     [proposalId]
   );
 
+  // Debounced save: collect the latest updates per section and flush after 800ms of inactivity
+  const pendingRef = useRef<Record<string, { updates: { content?: Json; is_enabled?: boolean; order_index?: number; library_item_id?: string | null }; changeType?: "human" | "ai" }>>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushSave = useCallback(async () => {
+    const pending = { ...pendingRef.current };
+    pendingRef.current = {};
+    const entries = Object.entries(pending);
+    if (entries.length === 0) return;
+
+    setSaving(true);
+    await Promise.all(
+      entries.map(async ([sectionId, { updates, changeType }]) => {
+        try {
+          const payload = changeType ? { ...updates, _changeType: changeType } : updates;
+          const res = await fetch(`/api/sections/${sectionId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) {
+            setSections((prev) =>
+              prev.map((s) => (s.id === sectionId ? { ...s, ...updates } : s))
+            );
+          }
+        } catch (err) {
+          console.error("Failed to update section:", err);
+        }
+      })
+    );
+    setSaving(false);
+  }, []);
+
+  // Flush on unmount so nothing is lost
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      // Fire synchronously on unmount
+      const pending = Object.entries(pendingRef.current);
+      if (pending.length > 0) {
+        for (const [sectionId, { updates, changeType }] of pending) {
+          const payload = changeType ? { ...updates, _changeType: changeType } : updates;
+          navigator.sendBeacon?.(
+            `/api/sections/${sectionId}`,
+            new Blob([JSON.stringify(payload)], { type: "application/json" })
+          );
+        }
+        pendingRef.current = {};
+      }
+    };
+  }, []);
+
   const updateSection = useCallback(
     async (sectionId: string, updates: { content?: Json; is_enabled?: boolean; order_index?: number; library_item_id?: string | null }, changeType?: "human" | "ai") => {
-      setSaving(true);
-      try {
-        const payload = changeType ? { ...updates, _changeType: changeType } : updates;
-        const res = await fetch(`/api/sections/${sectionId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (res.ok) {
-          setSections((prev) =>
-            prev.map((s) => (s.id === sectionId ? { ...s, ...updates } : s))
-          );
-          setSaving(false);
-          return true;
+      // Non-content updates (toggle, reorder, library) save immediately
+      if (updates.content === undefined) {
+        setSaving(true);
+        try {
+          const payload = changeType ? { ...updates, _changeType: changeType } : updates;
+          const res = await fetch(`/api/sections/${sectionId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) {
+            setSections((prev) =>
+              prev.map((s) => (s.id === sectionId ? { ...s, ...updates } : s))
+            );
+            setSaving(false);
+            return true;
+          }
+        } catch (err) {
+          console.error("Failed to update section:", err);
         }
-      } catch (err) {
-        console.error("Failed to update section:", err);
+        setSaving(false);
+        return false;
       }
-      setSaving(false);
-      return false;
+
+      // Content updates are debounced — update local state immediately, save after pause
+      setSections((prev) =>
+        prev.map((s) => (s.id === sectionId ? { ...s, ...updates } : s))
+      );
+      pendingRef.current[sectionId] = { updates, changeType };
+      setSaving(true);
+
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        flushSave();
+      }, 800);
+
+      return true;
     },
-    []
+    [flushSave]
   );
 
   const reorderSections = useCallback(

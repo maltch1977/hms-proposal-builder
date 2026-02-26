@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Image from "next/image";
 import { OrgChart } from "@/components/sections/org-chart";
 import { PersonnelTable } from "@/components/sections/personnel-table";
 import { LibrarySelector } from "@/components/editor/library-selector";
@@ -89,24 +88,6 @@ export function KeyPersonnel({
           selectedItemId={libraryItemId ?? null}
           onSelect={onLibrarySelect}
         />
-      )}
-
-      {content?.org_chart_image && (
-        <div className="rounded-lg border border-border/60 overflow-hidden">
-          <div className="bg-muted/30 px-4 py-2 border-b border-border/40">
-            <p className="text-xs font-medium text-muted-foreground">Organization Chart</p>
-          </div>
-          <div className="p-4 flex justify-center">
-            <Image
-              src={content.org_chart_image}
-              alt="Organization Chart"
-              width={800}
-              height={500}
-              className="max-w-full h-auto rounded"
-              unoptimized
-            />
-          </div>
-        </div>
       )}
 
       <Button

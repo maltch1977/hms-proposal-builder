@@ -33,6 +33,7 @@ interface SelectedAssetsSummaryProps {
   config: AssetTypeConfig;
   proposalId: string;
   refreshKey: number;
+  onItemClick?: (item: AssetItem) => void;
 }
 
 function getFirstPhoto(photos: unknown): string | null {
@@ -47,10 +48,12 @@ function SortableSummaryCard({
   entry,
   config,
   onRemove,
+  onClick,
 }: {
   entry: LinkedEntry;
   config: AssetTypeConfig;
   onRemove: () => void;
+  onClick?: () => void;
 }) {
   const {
     attributes,
@@ -106,7 +109,10 @@ function SortableSummaryCard({
         )
       )}
 
-      <div className="flex-1 min-w-0">
+      <div
+        className={cn("flex-1 min-w-0", onClick && "cursor-pointer")}
+        onClick={onClick}
+      >
         <p className="text-sm font-medium truncate">{config.getTitle(entry.item)}</p>
         <p className="text-xs text-muted-foreground truncate">{config.getSubtitle(entry.item)}</p>
       </div>
@@ -128,6 +134,7 @@ export function SelectedAssetsSummary({
   config,
   proposalId,
   refreshKey,
+  onItemClick,
 }: SelectedAssetsSummaryProps) {
   const [entries, setEntries] = useState<LinkedEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,6 +222,7 @@ export function SelectedAssetsSummary({
               entry={entry}
               config={config}
               onRemove={() => handleRemove(entry.junctionId)}
+              onClick={onItemClick ? () => onItemClick(entry.item) : undefined}
             />
           ))}
         </SortableContext>

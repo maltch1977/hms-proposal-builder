@@ -39,7 +39,12 @@ export function FirmBackground({
 }: FirmBackgroundProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editItem, setEditItem] = useState<import("@/lib/types/asset-library").AssetItem | null>(null);
   const handleSelectionChange = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const handleItemClick = useCallback((item: import("@/lib/types/asset-library").AssetItem) => {
+    setEditItem(item);
+    setPanelOpen(true);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -84,7 +89,7 @@ export function FirmBackground({
           variant="outline"
           size="sm"
           className="gap-2"
-          onClick={() => setPanelOpen(true)}
+          onClick={() => { setEditItem(null); setPanelOpen(true); }}
         >
           <Library className="h-3.5 w-3.5" />
           Manage Case Studies
@@ -93,6 +98,7 @@ export function FirmBackground({
           config={ASSET_CONFIGS.past_projects}
           proposalId={proposalId}
           refreshKey={refreshKey}
+          onItemClick={handleItemClick}
         />
         <AssetLibraryPanel
           open={panelOpen}
@@ -100,6 +106,7 @@ export function FirmBackground({
           assetType="past_projects"
           proposalId={proposalId}
           onSelectionChange={handleSelectionChange}
+          initialEditItem={editItem}
         />
       </div>
     </div>

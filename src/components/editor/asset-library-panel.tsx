@@ -24,6 +24,8 @@ interface AssetLibraryPanelProps {
   proposalId: string;
   /** Called when selected items change (for parent components that need to react) */
   onSelectionChange?: () => void;
+  /** If set, opens directly to edit form for this item */
+  initialEditItem?: AssetItem | null;
 }
 
 export function AssetLibraryPanel({
@@ -32,6 +34,7 @@ export function AssetLibraryPanel({
   assetType,
   proposalId,
   onSelectionChange,
+  initialEditItem,
 }: AssetLibraryPanelProps) {
   const config = ASSET_CONFIGS[assetType];
   const library = useAssetLibrary(config, proposalId);
@@ -116,16 +119,21 @@ export function AssetLibraryPanel({
     [library, onSelectionChange]
   );
 
-  // Reset view when panel opens
+  // Reset view when panel opens, or jump to edit if initialEditItem is set
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       if (isOpen) {
-        setView("browse");
-        setEditingItem(null);
+        if (initialEditItem) {
+          setEditingItem(initialEditItem);
+          setView("form");
+        } else {
+          setView("browse");
+          setEditingItem(null);
+        }
       }
       onOpenChange(isOpen);
     },
-    [onOpenChange]
+    [onOpenChange, initialEditItem]
   );
 
   return (

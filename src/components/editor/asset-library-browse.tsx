@@ -17,7 +17,6 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Search } from "lucide-react";
 import { AssetCard, SortableAssetCard } from "@/components/editor/asset-library-card";
 import type { AssetItem, AssetTypeConfig } from "@/lib/types/asset-library";
@@ -112,7 +111,7 @@ export function AssetLibraryBrowse({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 px-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-4">
         {/* Selected items */}
         {selectedItems.length > 0 && (
           <div className="mb-4">
@@ -171,7 +170,7 @@ export function AssetLibraryBrowse({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
     </div>
   );

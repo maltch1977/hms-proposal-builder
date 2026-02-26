@@ -26,7 +26,7 @@ export function AssetCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 rounded-md border border-border px-3 py-2 transition-colors",
+        "group flex items-center gap-2 rounded-md border border-border px-3 py-2 transition-colors overflow-hidden min-w-0",
         onAdd && "cursor-pointer hover:bg-accent/50"
       )}
       onClick={onAdd}
@@ -90,7 +90,7 @@ export function SortableAssetCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group flex items-center gap-2 rounded-md border border-border px-3 py-2 transition-colors hover:bg-accent/50",
+        "group flex items-center gap-2 rounded-md border border-border px-3 py-2 transition-colors hover:bg-accent/50 overflow-hidden min-w-0",
         isDragging && "opacity-50 shadow-lg"
       )}
     >

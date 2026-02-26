@@ -21,30 +21,42 @@ interface EmrEntry {
 interface EmrTableProps {
   entries?: EmrEntry[];
   onChange?: (entries: EmrEntry[]) => void;
+  libraryEntries?: EmrEntry[];
 }
 
-export function EmrTable({ entries = [], onChange }: EmrTableProps) {
+export function EmrTable({ entries = [], onChange, libraryEntries = [] }: EmrTableProps) {
   const [newYear, setNewYear] = useState("");
+
+  // Use library entries as display data when proposal has no entries yet
+  const usingLibrary = entries.length === 0 && libraryEntries.length > 0;
+  const displayEntries = usingLibrary ? libraryEntries : entries;
+
+  const commitToProposal = (newEntries: EmrEntry[]) => {
+    onChange?.(newEntries);
+  };
 
   const handleAddYear = () => {
     const year = newYear.trim() || String(new Date().getFullYear());
-    if (entries.some((e) => e.year === year)) return;
-    onChange?.([...entries, { year, rating: "" }]);
+    const base = usingLibrary ? [...libraryEntries] : [...entries];
+    if (base.some((e) => e.year === year)) return;
+    commitToProposal([...base, { year, rating: "" }]);
     setNewYear("");
   };
 
   const handleRatingChange = (index: number, rating: string) => {
-    const updated = entries.map((e, i) => (i === index ? { ...e, rating } : e));
-    onChange?.(updated);
+    const base = usingLibrary ? [...libraryEntries] : [...entries];
+    const updated = base.map((e, i) => (i === index ? { ...e, rating } : e));
+    commitToProposal(updated);
   };
 
   const handleRemoveYear = (index: number) => {
-    onChange?.(entries.filter((_, i) => i !== index));
+    const base = usingLibrary ? [...libraryEntries] : [...entries];
+    commitToProposal(base.filter((_, i) => i !== index));
   };
 
-  const sorted = [...entries].sort((a, b) => Number(b.year) - Number(a.year));
+  const sorted = [...displayEntries].sort((a, b) => Number(b.year) - Number(a.year));
 
-  if (entries.length === 0) {
+  if (displayEntries.length === 0) {
     return (
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
@@ -68,6 +80,11 @@ export function EmrTable({ entries = [], onChange }: EmrTableProps) {
 
   return (
     <div className="space-y-2">
+      {usingLibrary && (
+        <p className="text-xs text-muted-foreground italic">
+          Pre-filled from your EMR library. Editing will save to this proposal.
+        </p>
+      )}
       <div className="rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
@@ -78,7 +95,7 @@ export function EmrTable({ entries = [], onChange }: EmrTableProps) {
                     {e.year}
                     <button
                       type="button"
-                      onClick={() => handleRemoveYear(entries.indexOf(e))}
+                      onClick={() => handleRemoveYear(displayEntries.indexOf(e))}
                       className="text-muted-foreground hover:text-destructive ml-1"
                     >
                       <X className="h-3 w-3" />
@@ -91,7 +108,7 @@ export function EmrTable({ entries = [], onChange }: EmrTableProps) {
           <TableBody>
             <TableRow>
               {sorted.map((e) => {
-                const origIndex = entries.indexOf(e);
+                const origIndex = displayEntries.indexOf(e);
                 return (
                   <TableCell key={origIndex} className="text-center p-2">
                     <Input

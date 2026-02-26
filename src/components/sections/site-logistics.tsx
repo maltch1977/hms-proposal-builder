@@ -19,6 +19,7 @@ interface SiteLogisticsProps {
   onLibrarySelect: (item: Tables<"library_items">) => void;
   fieldAttributions?: Record<string, FieldAttribution>;
   fieldHighlights?: Record<string, AttributedSegment[]>;
+  libraryEmrEntries?: Array<{ year: string; rating: string }>;
 }
 
 export function SiteLogistics({
@@ -29,6 +30,7 @@ export function SiteLogistics({
   onLibrarySelect,
   fieldAttributions,
   fieldHighlights,
+  libraryEmrEntries,
 }: SiteLogisticsProps) {
   return (
     <div className="space-y-6">
@@ -69,6 +71,7 @@ export function SiteLogistics({
         <EmrTable
           entries={content.emr_entries || []}
           onChange={(emr_entries) => onChange({ ...content, emr_entries })}
+          libraryEntries={libraryEmrEntries}
         />
       </div>
     </div>

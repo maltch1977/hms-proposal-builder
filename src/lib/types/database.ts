@@ -324,6 +324,7 @@ export interface Database {
           years_at_company: number | null;
           years_with_distech: number | null;
           task_description: string | null;
+          bio: string | null;
           specialties: string[];
           certifications: string[];
           photo_url: string | null;
@@ -341,6 +342,7 @@ export interface Database {
           years_at_company?: number | null;
           years_with_distech?: number | null;
           task_description?: string | null;
+          bio?: string | null;
           specialties?: string[];
           certifications?: string[];
           photo_url?: string | null;
@@ -356,6 +358,7 @@ export interface Database {
           years_at_company?: number | null;
           years_with_distech?: number | null;
           task_description?: string | null;
+          bio?: string | null;
           specialties?: string[];
           certifications?: string[];
           photo_url?: string | null;

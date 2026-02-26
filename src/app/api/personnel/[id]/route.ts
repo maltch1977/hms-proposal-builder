@@ -39,7 +39,7 @@ export async function PUT(
   const body = await request.json();
   const {
     full_name, title, role_type, years_in_industry, years_at_company,
-    years_with_distech, task_description, specialties, certifications, is_active,
+    years_with_distech, task_description, bio, specialties, certifications, is_active,
   } = body;
 
   const admin = getAdminClient();
@@ -63,6 +63,7 @@ export async function PUT(
   if (years_at_company !== undefined) updateData.years_at_company = years_at_company || null;
   if (years_with_distech !== undefined) updateData.years_with_distech = years_with_distech || null;
   if (task_description !== undefined) updateData.task_description = task_description || null;
+  if (bio !== undefined) updateData.bio = bio || null;
   if (specialties !== undefined) updateData.specialties = specialties;
   if (certifications !== undefined) updateData.certifications = certifications;
   if (is_active !== undefined) updateData.is_active = is_active;

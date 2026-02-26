@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { RichTextEditor } from "@/components/editor/rich-text-editor";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ interface PersonnelFormProps {
     years_at_company: number | null;
     years_with_distech: number | null;
     task_description: string | null;
+    bio: string | null;
     specialties: string[];
     certifications: string[];
     is_active: boolean;
@@ -57,6 +59,7 @@ export function PersonnelForm({
   const [taskDescription, setTaskDescription] = useState(
     item?.task_description || ""
   );
+  const [bio, setBio] = useState(item?.bio || "");
   const [specialties, setSpecialties] = useState(
     item?.specialties?.join(", ") || ""
   );
@@ -75,6 +78,7 @@ export function PersonnelForm({
       years_at_company: yearsCompany ? parseInt(yearsCompany) : null,
       years_with_distech: yearsDistech ? parseInt(yearsDistech) : null,
       task_description: taskDescription || null,
+      bio: bio || null,
       specialties: specialties
         ? specialties.split(",").map((s) => s.trim()).filter(Boolean)
         : [],
@@ -164,6 +168,18 @@ export function PersonnelForm({
           placeholder="Responsibilities for proposals..."
           rows={3}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Bio</Label>
+        <RichTextEditor
+          content={bio}
+          onChange={setBio}
+          placeholder="Default bio used as starting point in proposals..."
+        />
+        <p className="text-xs text-muted-foreground">
+          Default bio used as starting point in proposals.
+        </p>
       </div>
 
       <div className="space-y-2">

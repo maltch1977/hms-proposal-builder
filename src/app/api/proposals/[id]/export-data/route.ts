@@ -64,11 +64,32 @@ export async function GET(
     .eq("proposal_id", proposalId)
     .order("order_index");
 
-  const { data: emrRatings } = await supabase
-    .from("emr_ratings")
-    .select("*")
-    .eq("organization_id", proposal.organization_id)
-    .order("year");
+  // Per-proposal EMR entries from site_logistics content, falling back to library table
+  const siteLogisticsSection = (sections || []).find((s) => {
+    const st = (s as unknown as { section_type: SectionType }).section_type;
+    return st.slug === "site_logistics";
+  });
+  const proposalEmrEntries = (
+    siteLogisticsSection?.content as Record<string, unknown> | null
+  )?.emr_entries as Array<{ year: string; rating: string }> | undefined;
+
+  let emrRatingsData: Array<{ year: number; rating: number }>;
+  if (proposalEmrEntries && proposalEmrEntries.length > 0) {
+    emrRatingsData = proposalEmrEntries.map((e) => ({
+      year: Number(e.year),
+      rating: Number(e.rating),
+    }));
+  } else {
+    const { data: emrRatings } = await supabase
+      .from("emr_ratings")
+      .select("*")
+      .eq("organization_id", proposal.organization_id)
+      .order("year");
+    emrRatingsData = (emrRatings || []).map((r) => ({
+      year: r.year,
+      rating: r.rating,
+    }));
+  }
 
   return NextResponse.json({
     title: proposal.title,
@@ -122,9 +143,6 @@ export async function GET(
       type: ci.type,
       amount: ci.amount,
     })),
-    emrRatings: (emrRatings || []).map((r) => ({
-      year: r.year,
-      rating: r.rating,
-    })),
+    emrRatings: emrRatingsData,
   });
 }

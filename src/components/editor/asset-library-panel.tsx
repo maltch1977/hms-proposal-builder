@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -41,6 +41,19 @@ export function AssetLibraryPanel({
 
   const [view, setView] = useState<PanelView>("browse");
   const [editingItem, setEditingItem] = useState<AssetItem | null>(null);
+
+  // Sync view when panel opens — the component stays mounted, so useState
+  // initializers don't re-run. React to open + initialEditItem changes instead.
+  useEffect(() => {
+    if (!open) return;
+    if (initialEditItem) {
+      setEditingItem(initialEditItem);
+      setView("form");
+    } else {
+      setEditingItem(null);
+      setView("browse");
+    }
+  }, [open, initialEditItem]);
 
   // Delete dialog state
   const [deleteTarget, setDeleteTarget] = useState<AssetItem | null>(null);
@@ -119,21 +132,11 @@ export function AssetLibraryPanel({
     [library, onSelectionChange]
   );
 
-  // Reset view when panel opens, or jump to edit if initialEditItem is set
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (isOpen) {
-        if (initialEditItem) {
-          setEditingItem(initialEditItem);
-          setView("form");
-        } else {
-          setView("browse");
-          setEditingItem(null);
-        }
-      }
       onOpenChange(isOpen);
     },
-    [onOpenChange, initialEditItem]
+    [onOpenChange]
   );
 
   return (

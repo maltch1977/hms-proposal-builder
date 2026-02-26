@@ -3,16 +3,19 @@
 import Image from "next/image";
 import { RichTextEditor } from "@/components/editor/rich-text-editor";
 import { PolishButton } from "@/components/editor/polish-button";
-import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { User, BookMarked } from "lucide-react";
 import type { TeamMemberWithPersonnel } from "@/components/sections/key-personnel";
 
 interface PersonnelBioCardProps {
   member: TeamMemberWithPersonnel;
   bio: string;
   onBioChange: (html: string) => void;
+  isLibraryFallback?: boolean;
+  onSaveToLibrary?: () => void;
 }
 
-export function PersonnelBioCard({ member, bio, onBioChange }: PersonnelBioCardProps) {
+export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, onSaveToLibrary }: PersonnelBioCardProps) {
   const p = member.personnel;
   const displayRole = member.role_override || p.title;
 
@@ -45,11 +48,31 @@ export function PersonnelBioCard({ member, bio, onBioChange }: PersonnelBioCardP
           </h4>
           <p className="text-xs text-muted-foreground truncate">{displayRole}</p>
         </div>
-        <PolishButton
-          html={bio}
-          onAccept={(polished) => onBioChange(polished)}
-        />
+        <div className="flex items-center gap-1 shrink-0">
+          {onSaveToLibrary && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              onClick={onSaveToLibrary}
+            >
+              <BookMarked className="h-3 w-3" />
+              Save to Library
+            </Button>
+          )}
+          <PolishButton
+            html={bio}
+            onAccept={(polished) => onBioChange(polished)}
+          />
+        </div>
       </div>
+
+      {isLibraryFallback && (
+        <p className="text-xs text-muted-foreground italic">
+          Pre-filled from library
+        </p>
+      )}
 
       {/* Stats row */}
       {stats.length > 0 && (

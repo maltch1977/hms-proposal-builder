@@ -37,7 +37,6 @@ import { SectionGuidance } from "@/components/sections/section-guidance";
 import { SectionFileUpload } from "@/components/sections/section-file-upload";
 
 const STRUCTURED_SECTION_SLUGS: Set<string> = new Set([
-  SECTION_SLUGS.KEY_PERSONNEL,
   SECTION_SLUGS.PROJECT_COST,
   SECTION_SLUGS.PROJECT_SCHEDULE,
   SECTION_SLUGS.REFERENCE_CHECK,
@@ -149,6 +148,26 @@ export function SectionRenderer({
     }
   }, [slug, fetchTeamMembers]);
 
+  // Library EMR ratings for Site Logistics section
+  const [libraryEmrEntries, setLibraryEmrEntries] = useState<Array<{ year: string; rating: string }>>([]);
+
+  useEffect(() => {
+    if (slug !== SECTION_SLUGS.SITE_LOGISTICS) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/emr-ratings");
+        const json = await res.json();
+        if (!cancelled && json.emrRatings) {
+          setLibraryEmrEntries(json.emrRatings);
+        }
+      } catch {
+        // Ignore
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
+
   // Library selection handler — updates both content and library_item_id
   const handleLibrarySelect = useCallback(
     (item: Tables<"library_items">) => {
@@ -230,19 +249,17 @@ export function SectionRenderer({
 
     case SECTION_SLUGS.KEY_PERSONNEL:
       sectionContent = (
-        <>
-          {guidanceBlock}
-          <KeyPersonnel
-            proposalId={proposalId}
-            teamMembers={teamMembers}
-            onTeamChange={fetchTeamMembers}
-            content={content as KeyPersonnelContent}
-            onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
-            sectionTypeId={sectionTypeId}
-            libraryItemId={libraryItemId}
-            onLibrarySelect={handleLibrarySelect}
-          />
-        </>
+        <KeyPersonnel
+          proposalId={proposalId}
+          teamMembers={teamMembers}
+          onTeamChange={fetchTeamMembers}
+          content={content as KeyPersonnelContent}
+          onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
+          sectionTypeId={sectionTypeId}
+          libraryItemId={libraryItemId}
+          onLibrarySelect={handleLibrarySelect}
+          rfpRequirements={sectionRequirements}
+        />
       );
       break;
 
@@ -269,6 +286,7 @@ export function SectionRenderer({
           onLibrarySelect={handleLibrarySelect}
           fieldAttributions={sectionFieldAttributions}
           fieldHighlights={sectionHighlights}
+          libraryEmrEntries={libraryEmrEntries}
         />
       );
       break;

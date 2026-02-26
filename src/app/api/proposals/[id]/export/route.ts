@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ProposalDocument } from "@/components/pdf/proposal-document";
 import type { ProposalDocumentData } from "@/components/pdf/proposal-document";
-import type { Tables, Json } from "@/lib/types/database";
+import type { Tables } from "@/lib/types/database";
 import React from "react";
 import path from "path";
 
@@ -77,12 +77,32 @@ export async function GET(
     .eq("proposal_id", proposalId)
     .order("order_index");
 
-  // Fetch EMR ratings
-  const { data: emrRatings } = await supabase
-    .from("emr_ratings")
-    .select("*")
-    .eq("organization_id", proposal.organization_id)
-    .order("year");
+  // Per-proposal EMR entries from site_logistics content, falling back to library table
+  const siteLogisticsSection = (sections || []).find((s) => {
+    const st = (s as unknown as { section_type: SectionType }).section_type;
+    return st.slug === "site_logistics";
+  });
+  const proposalEmrEntries = (
+    siteLogisticsSection?.content as Record<string, unknown> | null
+  )?.emr_entries as Array<{ year: string; rating: string }> | undefined;
+
+  let emrRatingsData: Array<{ year: number; rating: number }>;
+  if (proposalEmrEntries && proposalEmrEntries.length > 0) {
+    emrRatingsData = proposalEmrEntries.map((e) => ({
+      year: Number(e.year),
+      rating: Number(e.rating),
+    }));
+  } else {
+    const { data: emrRatings } = await supabase
+      .from("emr_ratings")
+      .select("*")
+      .eq("organization_id", proposal.organization_id)
+      .order("year");
+    emrRatingsData = (emrRatings || []).map((r) => ({
+      year: r.year,
+      rating: r.rating,
+    }));
+  }
 
   // Assemble document data
   const docData: ProposalDocumentData = {
@@ -132,7 +152,7 @@ export async function GET(
           taskDescription: p.task_description,
           specialties: p.specialties || [],
           certifications: p.certifications || [],
-          bio: memberBios?.[p.id] || null,
+          bio: memberBios?.[p.id] ?? p.bio ?? null,
         };
       });
     })(),
@@ -162,10 +182,7 @@ export async function GET(
       type: ci.type,
       amount: ci.amount,
     })),
-    emrRatings: (emrRatings || []).map((r) => ({
-      year: r.year,
-      rating: r.rating,
-    })),
+    emrRatings: emrRatingsData,
   };
 
   try {

@@ -15,10 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Library, ChevronRight } from "lucide-react";
+import { Library, ChevronRight, ChevronDown, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/lib/types/database";
 import type { KeyPersonnelContent } from "@/lib/types/section";
+import type { RFPRequirement } from "@/lib/ai/types";
 import type { AssetItem } from "@/lib/types/asset-library";
 
 type Personnel = Tables<"personnel">;
@@ -26,6 +27,41 @@ type ProposalTeamMember = Tables<"proposal_team_members">;
 
 export interface TeamMemberWithPersonnel extends ProposalTeamMember {
   personnel: Personnel;
+}
+
+/* Collapsible read-only block showing RFP requirements as reference */
+function RFPReferenceBlock({ requirements }: { requirements: RFPRequirement[] }) {
+  const [open, setOpen] = useState(false);
+  if (requirements.length === 0) return null;
+
+  return (
+    <div className="border border-border rounded-lg">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ListChecks className="h-3.5 w-3.5 shrink-0" />
+        <span className="flex-1 text-left">RFP Requirements ({requirements.length})</span>
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-1.5">
+          <p className="text-xs text-muted-foreground italic">
+            Address these in each person&apos;s bio narrative.
+          </p>
+          <ul className="space-y-1">
+            {requirements.map((r) => (
+              <li key={r.id} className="flex gap-2 text-xs text-foreground/80">
+                <span className="text-muted-foreground shrink-0">&#8226;</span>
+                <span>{r.description}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface KeyPersonnelProps {
@@ -37,6 +73,7 @@ interface KeyPersonnelProps {
   sectionTypeId?: string;
   libraryItemId?: string | null;
   onLibrarySelect?: (item: Tables<"library_items">) => void;
+  rfpRequirements?: RFPRequirement[];
 }
 
 export function KeyPersonnel({
@@ -48,10 +85,25 @@ export function KeyPersonnel({
   sectionTypeId,
   libraryItemId,
   onLibrarySelect,
+  rfpRequirements = [],
 }: KeyPersonnelProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [editItem, setEditItem] = useState<AssetItem | null>(null);
+
+  const handleSaveToLibrary = useCallback(async (personnelId: string, bio: string) => {
+    try {
+      const res = await fetch(`/api/personnel/${personnelId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bio }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Bio saved to library");
+    } catch {
+      toast.error("Failed to save bio to library");
+    }
+  }, []);
 
   const handleSelectionChange = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -170,22 +222,36 @@ export function KeyPersonnel({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Personnel Bios
             </p>
-            {teamMembers.map((member) => (
-              <PersonnelBioCard
-                key={member.id}
-                member={member}
-                bio={content?.member_bios?.[member.personnel_id] || ""}
-                onBioChange={(html) => {
-                  onChange?.({
-                    ...content,
-                    member_bios: {
-                      ...(content?.member_bios || {}),
-                      [member.personnel_id]: html,
-                    },
-                  });
-                }}
-              />
-            ))}
+            <RFPReferenceBlock requirements={rfpRequirements} />
+            {teamMembers.map((member) => {
+              const proposalBio = content?.member_bios?.[member.personnel_id];
+              // undefined (key missing) → falls back to library bio
+              // "" (explicitly cleared) → stays empty
+              const isLibraryFallback = proposalBio === undefined && !!member.personnel.bio;
+              const bioValue = proposalBio ?? member.personnel.bio ?? "";
+
+              return (
+                <PersonnelBioCard
+                  key={member.id}
+                  member={member}
+                  bio={bioValue}
+                  onBioChange={(html) => {
+                    onChange?.({
+                      ...content,
+                      member_bios: {
+                        ...(content?.member_bios || {}),
+                        [member.personnel_id]: html,
+                      },
+                    });
+                  }}
+                  isLibraryFallback={isLibraryFallback}
+                  onSaveToLibrary={() => {
+                    const currentBio = content?.member_bios?.[member.personnel_id] ?? bioValue;
+                    handleSaveToLibrary(member.personnel_id, currentBio);
+                  }}
+                />
+              );
+            })}
           </div>
         </>
       )}

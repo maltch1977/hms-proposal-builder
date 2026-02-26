@@ -6,6 +6,7 @@ import { SelectedAssetsSummary } from "@/components/editor/selected-assets-summa
 import { ASSET_CONFIGS } from "@/lib/config/asset-registry";
 import { Button } from "@/components/ui/button";
 import { Library } from "lucide-react";
+import type { AssetItem } from "@/lib/types/asset-library";
 
 interface ReferenceCheckProps {
   proposalId: string;
@@ -14,7 +15,13 @@ interface ReferenceCheckProps {
 export function ReferenceCheck({ proposalId }: ReferenceCheckProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editItem, setEditItem] = useState<AssetItem | null>(null);
   const handleSelectionChange = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  const handleItemClick = useCallback((item: AssetItem) => {
+    setEditItem(item);
+    setPanelOpen(true);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -26,7 +33,7 @@ export function ReferenceCheck({ proposalId }: ReferenceCheckProps) {
         variant="outline"
         size="sm"
         className="gap-2"
-        onClick={() => setPanelOpen(true)}
+        onClick={() => { setEditItem(null); setPanelOpen(true); }}
       >
         <Library className="h-3.5 w-3.5" />
         Manage References
@@ -35,6 +42,7 @@ export function ReferenceCheck({ proposalId }: ReferenceCheckProps) {
         config={ASSET_CONFIGS.references}
         proposalId={proposalId}
         refreshKey={refreshKey}
+        onItemClick={handleItemClick}
       />
       <AssetLibraryPanel
         open={panelOpen}
@@ -42,6 +50,7 @@ export function ReferenceCheck({ proposalId }: ReferenceCheckProps) {
         assetType="references"
         proposalId={proposalId}
         onSelectionChange={handleSelectionChange}
+        initialEditItem={editItem}
       />
     </div>
   );

@@ -22,7 +22,7 @@ export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, 
   const stats = [
     p.years_in_industry != null && `Yrs Industry: ${p.years_in_industry}`,
     p.years_at_company != null && `Yrs Company: ${p.years_at_company}`,
-    p.years_with_distech != null && `Yrs Distech: ${p.years_with_distech}`,
+    p.years_with_distech != null && `Yrs Controls: ${p.years_with_distech}`,
   ].filter(Boolean);
 
   return (

@@ -10,6 +10,7 @@ import { ProjectCostPdf } from "./project-cost-pdf";
 import { ReferencePdf } from "./reference-pdf";
 import { ExecutionStrategyPdf } from "./execution-strategy-pdf";
 import type { Json } from "@/lib/types/database";
+import type { PricingColumn, PricingRow } from "@/lib/types/section";
 
 // Types for the assembled proposal data
 interface SectionData {
@@ -49,12 +50,6 @@ interface ReferenceEntry {
   category: string;
 }
 
-interface CostItem {
-  description: string;
-  type: "base" | "adder" | "deduct";
-  amount: number;
-}
-
 interface EmrEntry {
   year: number;
   rating: number;
@@ -78,7 +73,7 @@ export interface ProposalDocumentData {
   personnel: PersonnelEntry[];
   caseStudies: CaseStudyEntry[];
   references: ReferenceEntry[];
-  costItems: CostItem[];
+  costData: { columns: PricingColumn[]; rows: PricingRow[]; notes?: string };
   emrRatings: EmrEntry[];
 }
 
@@ -186,7 +181,11 @@ export function ProposalDocument({ data }: ProposalDocumentProps) {
                 <SectionPage key={section.slug} title="Key Personnel & Org Chart" {...pageProps}>
                   <KeyPersonnelPdf
                     personnel={data.personnel}
-                    orgChartImageUrl={section.content.org_chart_image as string | undefined}
+                    orgChartImageUrl={
+                      (section.content.org_chart_mode || "upload") === "upload"
+                        ? (section.content.org_chart_image as string | undefined)
+                        : undefined
+                    }
                   />
                 </SectionPage>
               );
@@ -266,7 +265,11 @@ export function ProposalDocument({ data }: ProposalDocumentProps) {
             case "project_cost":
               return (
                 <SectionPage key={section.slug} title="Project Cost" {...pageProps}>
-                  <ProjectCostPdf items={data.costItems} />
+                  <ProjectCostPdf
+                    columns={data.costData.columns}
+                    rows={data.costData.rows}
+                    notes={data.costData.notes}
+                  />
                 </SectionPage>
               );
 

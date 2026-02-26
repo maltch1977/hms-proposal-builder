@@ -58,12 +58,6 @@ export async function GET(
     .eq("proposal_id", proposalId)
     .order("order_index");
 
-  const { data: costItems } = await supabase
-    .from("proposal_cost_items")
-    .select("*")
-    .eq("proposal_id", proposalId)
-    .order("order_index");
-
   // Per-proposal EMR entries from site_logistics content, falling back to library table
   const siteLogisticsSection = (sections || []).find((s) => {
     const st = (s as unknown as { section_type: SectionType }).section_type;
@@ -138,11 +132,18 @@ export async function GET(
         category: ref.category,
       };
     }),
-    costItems: (costItems || []).map((ci) => ({
-      description: ci.description,
-      type: ci.type,
-      amount: ci.amount,
-    })),
+    costData: (() => {
+      const costSection = (sections || []).find((s) => {
+        const st = (s as unknown as { section_type: SectionType }).section_type;
+        return st.slug === "project_cost";
+      });
+      const content = (costSection?.content || {}) as Record<string, unknown>;
+      return {
+        columns: content.columns || [],
+        rows: content.rows || [],
+        notes: (content.notes as string) || undefined,
+      };
+    })(),
     emrRatings: emrRatingsData,
   });
 }

@@ -149,7 +149,7 @@ export function PersonnelForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="p-yd">Years with Distech</Label>
+          <Label htmlFor="p-yd">Years with Controls Experience</Label>
           <Input
             id="p-yd"
             type="number"

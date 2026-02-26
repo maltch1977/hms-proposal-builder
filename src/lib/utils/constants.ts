@@ -81,7 +81,10 @@ export const SECTION_DISPLAY_NAMES: Record<SectionSlug, string> = {
 
 export const ROLE_TYPES = [
   "Executive",
+  "Senior Project Manager",
   "Project Manager",
+  "General Foreman",
+  "Foreman",
   "Superintendent",
   "Engineer",
   "Programmer",
@@ -94,13 +97,16 @@ export type RoleType = (typeof ROLE_TYPES)[number];
 
 export const ROLE_TYPE_HIERARCHY: Record<string, number> = {
   Executive: 1,
-  "Project Manager": 2,
-  Superintendent: 3,
-  Engineer: 4,
-  Programmer: 5,
-  Technician: 6,
-  Estimator: 7,
-  Other: 8,
+  "Senior Project Manager": 2,
+  "Project Manager": 3,
+  "General Foreman": 4,
+  Foreman: 5,
+  Superintendent: 6,
+  Engineer: 7,
+  Programmer: 8,
+  Technician: 9,
+  Estimator: 10,
+  Other: 11,
 };
 
 export const PROJECT_TYPES = [

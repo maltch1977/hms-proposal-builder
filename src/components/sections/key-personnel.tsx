@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Library, ChevronRight, ChevronDown, ListChecks } from "lucide-react";
+import { FileUpload } from "@/components/editor/file-upload";
+import { Library, ChevronRight, ChevronDown, ListChecks, Upload, GitBranch } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/lib/types/database";
 import type { KeyPersonnelContent } from "@/lib/types/section";
@@ -90,6 +91,7 @@ export function KeyPersonnel({
   const [panelOpen, setPanelOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [editItem, setEditItem] = useState<AssetItem | null>(null);
+  const orgChartMode = content?.org_chart_mode || "upload";
 
   const handleSaveToLibrary = useCallback(async (personnelId: string, bio: string) => {
     try {
@@ -104,6 +106,18 @@ export function KeyPersonnel({
       toast.error("Failed to save bio to library");
     }
   }, []);
+
+  const handleOrgChartUpload = useCallback(async (file: File): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("bucket", "proposal-files");
+
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    if (!res.ok) return null;
+    const { url } = await res.json();
+    onChange?.({ ...content, org_chart_image: url });
+    return url;
+  }, [content, onChange]);
 
   const handleSelectionChange = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -166,57 +180,109 @@ export function KeyPersonnel({
         initialEditItem={editItem}
       />
 
-      {/* Hierarchy editor — define reporting structure for org chart */}
-      {teamMembers.length >= 2 && (
-        <div className="border-t border-border pt-4 space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Reporting Structure
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Define who each team member reports to. This drives the org chart layout.
-          </p>
-          <div className="space-y-1">
-            {teamMembers.map((member) => {
-              const hp = member.hierarchy_position as { parent_id?: string } | null;
-              const currentParentId = hp?.parent_id || "";
-              const otherMembers = teamMembers.filter((m) => m.id !== member.id);
+      {/* Organization Chart */}
+      <div className="border-t border-border pt-4 space-y-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Organization Chart
+        </p>
 
-              return (
-                <div key={member.id} className="flex items-center gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
-                  <span className="flex-1 min-w-0 truncate font-medium">
-                    {member.personnel.full_name}
-                  </span>
-                  <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                  <Select
-                    value={currentParentId}
-                    onValueChange={(val) =>
-                      handleSetReportsTo(member.id, val === "__none__" ? null : val)
-                    }
-                  >
-                    <SelectTrigger className="h-7 w-[160px] text-xs">
-                      <SelectValue placeholder="Reports to..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">
-                        <span className="text-muted-foreground">No one (top level)</span>
-                      </SelectItem>
-                      {otherMembers.map((other) => (
-                        <SelectItem key={other.id} value={other.id}>
-                          {other.personnel.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              );
-            })}
-          </div>
+        {/* Mode toggle */}
+        <div className="flex gap-2">
+          <Button
+            variant={orgChartMode === "upload" ? "default" : "outline"}
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => onChange?.({ ...content, org_chart_mode: "upload" })}
+          >
+            <Upload className="h-3 w-3" />
+            Upload Org Chart
+          </Button>
+          <Button
+            variant={orgChartMode === "hierarchy" ? "default" : "outline"}
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => onChange?.({ ...content, org_chart_mode: "hierarchy" })}
+          >
+            <GitBranch className="h-3 w-3" />
+            Build from Team
+          </Button>
         </div>
-      )}
+
+        {orgChartMode === "upload" ? (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Upload your company org chart image. This will be used in the PDF export.
+            </p>
+            <FileUpload
+              accept={{ "image/*": [".png", ".jpg", ".jpeg", ".webp"] }}
+              onUpload={handleOrgChartUpload}
+              currentFileUrl={content?.org_chart_image || null}
+              currentFileName="Organization Chart"
+              onRemove={() => onChange?.({ ...content, org_chart_image: undefined })}
+              label="Upload org chart image"
+            />
+          </div>
+        ) : (
+          teamMembers.length >= 2 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Define who each team member reports to. This drives the org chart layout.
+              </p>
+              <div className="space-y-1">
+                {teamMembers.map((member) => {
+                  const hp = member.hierarchy_position as { parent_id?: string } | null;
+                  const currentParentId = hp?.parent_id || "";
+                  const otherMembers = teamMembers.filter((m) => m.id !== member.id);
+
+                  return (
+                    <div key={member.id} className="flex items-center gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
+                      <span className="flex-1 min-w-0 truncate font-medium">
+                        {member.personnel.full_name}
+                      </span>
+                      <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <Select
+                        value={currentParentId}
+                        onValueChange={(val) =>
+                          handleSetReportsTo(member.id, val === "__none__" ? null : val)
+                        }
+                      >
+                        <SelectTrigger className="h-7 w-[160px] text-xs">
+                          <SelectValue placeholder="Reports to..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">
+                            <span className="text-muted-foreground">No one (top level)</span>
+                          </SelectItem>
+                          {otherMembers.map((other) => (
+                            <SelectItem key={other.id} value={other.id}>
+                              {other.personnel.full_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )
+        )}
+      </div>
 
       {teamMembers.length > 0 && (
         <>
-          <OrgChart teamMembers={teamMembers} />
+          {orgChartMode === "upload" && content?.org_chart_image ? (
+            <div className="flex justify-center py-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={content.org_chart_image}
+                alt="Organization Chart"
+                className="max-w-full max-h-[400px] object-contain rounded-lg border border-border"
+              />
+            </div>
+          ) : orgChartMode === "hierarchy" ? (
+            <OrgChart teamMembers={teamMembers} />
+          ) : null}
 
           <div className="border-t border-border pt-6 space-y-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">

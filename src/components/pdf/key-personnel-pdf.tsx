@@ -70,7 +70,7 @@ export function KeyPersonnelPdf({ personnel, orgChartImageUrl }: KeyPersonnelPdf
         const stats = [
           person.yearsIndustry != null && `Yrs Industry: ${person.yearsIndustry}`,
           person.yearsCompany != null && `Yrs Company: ${person.yearsCompany}`,
-          person.yearsWithDistech != null && `Yrs Distech: ${person.yearsWithDistech}`,
+          person.yearsWithDistech != null && `Yrs Controls: ${person.yearsWithDistech}`,
         ].filter(Boolean);
 
         return (

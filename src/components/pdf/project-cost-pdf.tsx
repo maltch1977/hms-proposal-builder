@@ -1,14 +1,11 @@
 import { View, Text } from "@react-pdf/renderer";
 import { COLORS, baseStyles } from "./pdf-styles";
-
-interface CostItem {
-  description: string;
-  type: "base" | "adder" | "deduct";
-  amount: number;
-}
+import type { PricingColumn, PricingRow } from "@/lib/types/section";
 
 interface ProjectCostPdfProps {
-  items: CostItem[];
+  columns: PricingColumn[];
+  rows: PricingRow[];
+  notes?: string;
 }
 
 function formatCurrency(amount: number): string {
@@ -20,167 +17,114 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function ProjectCostPdf({ items }: ProjectCostPdfProps) {
-  const baseItems = items.filter((i) => i.type === "base");
-  const adders = items.filter((i) => i.type === "adder");
-  const deducts = items.filter((i) => i.type === "deduct");
+function parseDollar(value: string | undefined): number {
+  if (!value) return 0;
+  return Number(value.replace(/[^0-9.-]/g, "")) || 0;
+}
 
-  const baseTotal = baseItems.reduce((s, i) => s + i.amount, 0);
-  const addersTotal = adders.reduce((s, i) => s + i.amount, 0);
-  const deductsTotal = deducts.reduce((s, i) => s + i.amount, 0);
-  const grandTotal = baseTotal + addersTotal - deductsTotal;
+export function ProjectCostPdf({ columns, rows, notes }: ProjectCostPdfProps) {
+  if (columns.length === 0 && rows.length === 0) return null;
+
+  const colWidth = columns.length > 0 ? 100 / columns.length : 100;
+
+  // Compute per-column totals
+  const columnTotals: Record<string, number> = {};
+  for (const col of columns) {
+    columnTotals[col.id] = rows.reduce(
+      (sum, row) => sum + parseDollar(row.values[col.id]),
+      0
+    );
+  }
 
   return (
     <View>
-      {/* Base Scope */}
-      {baseItems.length > 0 && (
-        <View style={{ marginBottom: 12 }}>
-          <Text style={baseStyles.sectionSubtitle}>Base Scope</Text>
-          <View style={baseStyles.table}>
-            <View style={baseStyles.tableHeader}>
-              <Text style={[baseStyles.tableHeaderCell, { flex: 1 }]}>
-                Description
-              </Text>
-              <Text
-                style={[
-                  baseStyles.tableHeaderCell,
-                  { width: 100, textAlign: "right" },
-                ]}
-              >
-                Amount
-              </Text>
-            </View>
-            {baseItems.map((item, idx) => (
-              <View
-                key={idx}
-                style={idx % 2 === 0 ? baseStyles.tableRow : baseStyles.tableRowAlt}
-              >
-                <Text style={[baseStyles.tableCell, { flex: 1 }]}>
-                  {item.description}
-                </Text>
-                <Text
-                  style={[
-                    baseStyles.tableCell,
-                    { width: 100, textAlign: "right" },
-                  ]}
-                >
-                  {formatCurrency(item.amount)}
-                </Text>
-              </View>
-            ))}
-            <View
-              style={{
-                flexDirection: "row",
-                paddingVertical: 5,
-                paddingHorizontal: 8,
-                backgroundColor: COLORS.lightGray,
-              }}
+      <View style={baseStyles.table}>
+        {/* Header */}
+        <View style={baseStyles.tableHeader}>
+          <Text style={[baseStyles.tableHeaderCell, { flex: 2 }]}>
+            Description
+          </Text>
+          {columns.map((col) => (
+            <Text
+              key={col.id}
+              style={[
+                baseStyles.tableHeaderCell,
+                { width: colWidth, textAlign: "right", flex: 1 },
+              ]}
             >
+              {col.name}
+            </Text>
+          ))}
+        </View>
+
+        {/* Data rows */}
+        {rows.map((row, idx) => (
+          <View
+            key={row.id}
+            style={idx % 2 === 0 ? baseStyles.tableRow : baseStyles.tableRowAlt}
+          >
+            <Text style={[baseStyles.tableCell, { flex: 2 }]}>
+              {row.description}
+            </Text>
+            {columns.map((col) => (
               <Text
-                style={[baseStyles.tableCell, baseStyles.bold, { flex: 1 }]}
-              >
-                Base Scope Subtotal
-              </Text>
-              <Text
+                key={col.id}
                 style={[
                   baseStyles.tableCell,
-                  baseStyles.bold,
-                  { width: 100, textAlign: "right" },
+                  { width: colWidth, textAlign: "right", flex: 1 },
                 ]}
               >
-                {formatCurrency(baseTotal)}
+                {row.values[col.id]
+                  ? formatCurrency(parseDollar(row.values[col.id]))
+                  : ""}
               </Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Adders */}
-      {adders.length > 0 && (
-        <View style={{ marginBottom: 12 }}>
-          <Text style={baseStyles.sectionSubtitle}>Adders / Alternates</Text>
-          <View style={baseStyles.table}>
-            {adders.map((item, idx) => (
-              <View
-                key={idx}
-                style={idx % 2 === 0 ? baseStyles.tableRow : baseStyles.tableRowAlt}
-              >
-                <Text style={[baseStyles.tableCell, { flex: 1 }]}>
-                  {item.description}
-                </Text>
-                <Text
-                  style={[
-                    baseStyles.tableCell,
-                    { width: 100, textAlign: "right" },
-                  ]}
-                >
-                  {formatCurrency(item.amount)}
-                </Text>
-              </View>
             ))}
           </View>
-        </View>
-      )}
+        ))}
 
-      {/* Deducts */}
-      {deducts.length > 0 && (
-        <View style={{ marginBottom: 12 }}>
-          <Text style={baseStyles.sectionSubtitle}>Deducts</Text>
-          <View style={baseStyles.table}>
-            {deducts.map((item, idx) => (
-              <View
-                key={idx}
-                style={idx % 2 === 0 ? baseStyles.tableRow : baseStyles.tableRowAlt}
-              >
-                <Text style={[baseStyles.tableCell, { flex: 1 }]}>
-                  {item.description}
-                </Text>
-                <Text
-                  style={[
-                    baseStyles.tableCell,
-                    { width: 100, textAlign: "right", color: "#CC0000" },
-                  ]}
-                >
-                  ({formatCurrency(item.amount)})
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* Grand Total */}
-      <View
-        style={{
-          flexDirection: "row",
-          paddingVertical: 8,
-          paddingHorizontal: 8,
-          backgroundColor: COLORS.navy,
-          marginTop: 4,
-        }}
-      >
-        <Text
+        {/* Totals row */}
+        <View
           style={{
-            flex: 1,
-            fontSize: 11,
-            fontFamily: "Helvetica-Bold",
-            color: COLORS.white,
+            flexDirection: "row",
+            paddingVertical: 8,
+            paddingHorizontal: 8,
+            backgroundColor: COLORS.navy,
           }}
         >
-          GRAND TOTAL
-        </Text>
-        <Text
-          style={{
-            width: 100,
-            textAlign: "right",
-            fontSize: 11,
-            fontFamily: "Helvetica-Bold",
-            color: COLORS.white,
-          }}
-        >
-          {formatCurrency(grandTotal)}
-        </Text>
+          <Text
+            style={{
+              flex: 2,
+              fontSize: 11,
+              fontFamily: "Helvetica-Bold",
+              color: COLORS.white,
+            }}
+          >
+            TOTAL
+          </Text>
+          {columns.map((col) => (
+            <Text
+              key={col.id}
+              style={{
+                flex: 1,
+                textAlign: "right",
+                fontSize: 11,
+                fontFamily: "Helvetica-Bold",
+                color: COLORS.white,
+              }}
+            >
+              {formatCurrency(columnTotals[col.id])}
+            </Text>
+          ))}
+        </View>
       </View>
+
+      {/* Notes */}
+      {notes && (
+        <View style={{ marginTop: 10 }}>
+          <Text style={baseStyles.sectionSubtitle}>Notes</Text>
+          <Text style={{ fontSize: 9, lineHeight: 1.5 }}>{notes}</Text>
+        </View>
+      )}
     </View>
   );
 }

@@ -90,9 +90,9 @@ export function AssetLibraryBrowse({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Search */}
-      <div className="px-4 pb-3">
-        <div className="relative">
+      {/* Search + Create */}
+      <div className="px-4 pb-3 flex items-center gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={search}
@@ -101,6 +101,15 @@ export function AssetLibraryBrowse({
             className="pl-9 h-9"
           />
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 w-9 p-0 shrink-0"
+          onClick={onCreate}
+          title={`Create new ${config.label.toLowerCase()}`}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
 
       <ScrollArea className="flex-1 px-4">
@@ -164,18 +173,6 @@ export function AssetLibraryBrowse({
         </div>
       </ScrollArea>
 
-      {/* Create new */}
-      <div className="px-4 py-3 border-t border-border">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-2"
-          onClick={onCreate}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Create New {config.label}
-        </Button>
-      </div>
     </div>
   );
 }

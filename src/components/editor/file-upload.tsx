@@ -74,18 +74,21 @@ export function FileUpload({
     const isImage = currentFileUrl.match(/\.(png|jpg|jpeg|webp|gif)$/i);
     return (
       <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-          {isImage ? (
-            <ImageIcon className="h-5 w-5 text-muted-foreground" />
-          ) : (
-            <FileText className="h-5 w-5 text-muted-foreground" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">
-            {currentFileName || "Uploaded file"}
-          </p>
-          <p className="text-xs text-muted-foreground">Click to replace</p>
+        <div {...getRootProps()} className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+          <input {...getInputProps()} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted shrink-0">
+            {isImage ? (
+              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <FileText className="h-5 w-5 text-muted-foreground" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">
+              {currentFileName || "Uploaded file"}
+            </p>
+            <p className="text-xs text-muted-foreground">Click to replace</p>
+          </div>
         </div>
         {onRemove && !disabled && (
           <Button

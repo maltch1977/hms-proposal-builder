@@ -127,7 +127,11 @@ export async function GET(
       if (slug === "key_personnel") {
         const mode = (content.org_chart_mode as string) || "upload";
         if (mode === "upload") {
-          const imgUrl = (content.org_chart_image as string) || "/images/hms_org_chart.png";
+          const stored = content.org_chart_image as string | undefined;
+          // Use default unless a real custom upload exists (non-static-path)
+          const imgUrl = (stored && !stored.startsWith("/images/"))
+            ? stored
+            : "/images/hms_org_chart.png";
           content.org_chart_image = imgUrl.startsWith("/")
             ? path.join(process.cwd(), "public", imgUrl)
             : imgUrl;

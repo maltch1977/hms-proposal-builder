@@ -94,6 +94,11 @@ export function KeyPersonnel({
   const [refreshKey, setRefreshKey] = useState(0);
   const [editItem, setEditItem] = useState<AssetItem | null>(null);
   const orgChartMode = content?.org_chart_mode || "upload";
+  // Only treat as "custom" if it's a real uploaded URL, not the old default or static path
+  const hasCustomOrgChart = !!(
+    content?.org_chart_image &&
+    !content.org_chart_image.startsWith("/images/")
+  );
 
   const handleSaveToLibrary = useCallback(async (personnelId: string, bio: string) => {
     try {
@@ -213,15 +218,15 @@ export function KeyPersonnel({
         {orgChartMode === "upload" ? (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              Upload your company org chart image. This will be used in the PDF export.
+              Using company org chart. Upload a replacement below if needed for this proposal.
             </p>
             <FileUpload
               accept={{ "image/*": [".png", ".jpg", ".jpeg", ".webp"] }}
               onUpload={handleOrgChartUpload}
-              currentFileUrl={content?.org_chart_image || null}
-              currentFileName="Organization Chart"
+              currentFileUrl={hasCustomOrgChart ? content?.org_chart_image || null : null}
+              currentFileName="Custom Org Chart"
               onRemove={() => onChange?.({ ...content, org_chart_image: undefined })}
-              label="Upload org chart image"
+              label="Upload replacement org chart"
             />
           </div>
         ) : (
@@ -277,7 +282,7 @@ export function KeyPersonnel({
             <div className="flex justify-center py-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={content?.org_chart_image || DEFAULT_ORG_CHART_URL}
+                src={hasCustomOrgChart ? content!.org_chart_image! : DEFAULT_ORG_CHART_URL}
                 alt="Organization Chart"
                 className="max-w-full max-h-[400px] object-contain rounded-lg border border-border"
               />

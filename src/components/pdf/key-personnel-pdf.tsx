@@ -1,5 +1,6 @@
 import { View, Text, Image } from "@react-pdf/renderer";
 import { COLORS, baseStyles } from "./pdf-styles";
+import { HtmlContent } from "./html-to-pdf";
 
 interface PersonnelEntry {
   fullName: string;
@@ -7,7 +8,11 @@ interface PersonnelEntry {
   roleType: string;
   yearsIndustry: number | null;
   yearsCompany: number | null;
+  yearsWithDistech: number | null;
   taskDescription: string | null;
+  specialties: string[];
+  certifications: string[];
+  bio: string | null;
 }
 
 interface KeyPersonnelPdfProps {
@@ -59,55 +64,65 @@ export function KeyPersonnelPdf({ personnel, orgChartImageUrl }: KeyPersonnelPdf
         </View>
       )}
 
-      {/* Personnel Table */}
+      {/* Personnel Bios */}
       <Text style={baseStyles.sectionSubtitle}>Personnel Qualifications</Text>
-      <View style={baseStyles.table}>
-        <View style={baseStyles.tableHeader}>
-          <Text style={[baseStyles.tableHeaderCell, { width: "22%" }]}>
-            Name
-          </Text>
-          <Text style={[baseStyles.tableHeaderCell, { width: "20%" }]}>
-            Title
-          </Text>
-          <Text style={[baseStyles.tableHeaderCell, { width: "14%" }]}>
-            Role
-          </Text>
-          <Text style={[baseStyles.tableHeaderCell, { width: "10%", textAlign: "center" }]}>
-            Yrs Ind.
-          </Text>
-          <Text style={[baseStyles.tableHeaderCell, { width: "10%", textAlign: "center" }]}>
-            Yrs Co.
-          </Text>
-          <Text style={[baseStyles.tableHeaderCell, { width: "24%" }]}>
-            Responsibilities
-          </Text>
-        </View>
-        {personnel.map((person, idx) => (
+      {personnel.map((person, idx) => {
+        const stats = [
+          person.yearsIndustry != null && `Yrs Industry: ${person.yearsIndustry}`,
+          person.yearsCompany != null && `Yrs Company: ${person.yearsCompany}`,
+          person.yearsWithDistech != null && `Yrs Distech: ${person.yearsWithDistech}`,
+        ].filter(Boolean);
+
+        return (
           <View
             key={idx}
-            style={idx % 2 === 0 ? baseStyles.tableRow : baseStyles.tableRowAlt}
+            style={{
+              marginBottom: 12,
+              paddingBottom: 10,
+              borderBottomWidth: idx < personnel.length - 1 ? 0.5 : 0,
+              borderBottomColor: COLORS.mediumGray,
+            }}
           >
-            <Text style={[baseStyles.tableCell, baseStyles.bold, { width: "22%" }]}>
+            {/* Name & title */}
+            <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: COLORS.navy }}>
               {person.fullName}
             </Text>
-            <Text style={[baseStyles.tableCell, { width: "20%" }]}>
-              {person.title}
-            </Text>
-            <Text style={[baseStyles.tableCell, { width: "14%" }]}>
+            <Text style={{ fontSize: 9, color: COLORS.darkGray, marginTop: 1 }}>
               {person.roleType}
             </Text>
-            <Text style={[baseStyles.tableCell, { width: "10%", textAlign: "center" }]}>
-              {person.yearsIndustry ?? "—"}
-            </Text>
-            <Text style={[baseStyles.tableCell, { width: "10%", textAlign: "center" }]}>
-              {person.yearsCompany ?? "—"}
-            </Text>
-            <Text style={[baseStyles.tableCell, { width: "24%" }]}>
-              {person.taskDescription || "—"}
-            </Text>
+
+            {/* Stats */}
+            {stats.length > 0 && (
+              <Text style={{ fontSize: 8, color: COLORS.darkGray, marginTop: 3 }}>
+                {stats.join("  ·  ")}
+              </Text>
+            )}
+
+            {/* Certs & Specialties */}
+            {(person.certifications.length > 0 || person.specialties.length > 0) && (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 2, gap: 12 }}>
+                {person.certifications.length > 0 && (
+                  <Text style={{ fontSize: 8, color: COLORS.darkGray }}>
+                    Certs: {person.certifications.join(", ")}
+                  </Text>
+                )}
+                {person.specialties.length > 0 && (
+                  <Text style={{ fontSize: 8, color: COLORS.darkGray }}>
+                    Specialties: {person.specialties.join(", ")}
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Bio narrative */}
+            {person.bio && (
+              <View style={{ marginTop: 4 }}>
+                <HtmlContent html={person.bio} />
+              </View>
+            )}
           </View>
-        ))}
-      </View>
+        );
+      })}
     </View>
   );
 }

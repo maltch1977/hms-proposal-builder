@@ -25,7 +25,11 @@ interface PersonnelEntry {
   roleType: string;
   yearsIndustry: number | null;
   yearsCompany: number | null;
+  yearsWithDistech: number | null;
   taskDescription: string | null;
+  specialties: string[];
+  certifications: string[];
+  bio: string | null;
 }
 
 interface CaseStudyEntry {

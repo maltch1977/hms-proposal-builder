@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { OrgChart } from "@/components/sections/org-chart";
-import { PersonnelTable } from "@/components/sections/personnel-table";
+import { PersonnelBioCard } from "@/components/sections/personnel-bio-card";
 import { LibrarySelector } from "@/components/editor/library-selector";
 import { AssetLibraryPanel } from "@/components/editor/asset-library-panel";
 import { SelectedAssetsSummary } from "@/components/editor/selected-assets-summary";
@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Library, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/lib/types/database";
@@ -45,6 +44,7 @@ export function KeyPersonnel({
   teamMembers,
   onTeamChange,
   content,
+  onChange,
   sectionTypeId,
   libraryItemId,
   onLibrarySelect,
@@ -163,18 +163,31 @@ export function KeyPersonnel({
       )}
 
       {teamMembers.length > 0 && (
-        <Tabs defaultValue="orgchart" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="orgchart">Org Chart</TabsTrigger>
-            <TabsTrigger value="table">Personnel Table</TabsTrigger>
-          </TabsList>
-          <TabsContent value="orgchart" className="mt-4">
-            <OrgChart teamMembers={teamMembers} />
-          </TabsContent>
-          <TabsContent value="table" className="mt-4">
-            <PersonnelTable teamMembers={teamMembers} />
-          </TabsContent>
-        </Tabs>
+        <>
+          <OrgChart teamMembers={teamMembers} />
+
+          <div className="border-t border-border pt-6 space-y-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Personnel Bios
+            </p>
+            {teamMembers.map((member) => (
+              <PersonnelBioCard
+                key={member.id}
+                member={member}
+                bio={content?.member_bios?.[member.personnel_id] || ""}
+                onBioChange={(html) => {
+                  onChange?.({
+                    ...content,
+                    member_bios: {
+                      ...(content?.member_bios || {}),
+                      [member.personnel_id]: html,
+                    },
+                  });
+                }}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

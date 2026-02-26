@@ -23,6 +23,7 @@ export interface KeyPersonnelContent {
   // Org chart positions stored in hierarchy_position on each member
   org_chart_image?: string; // URL to a custom org chart image
   requirement_responses?: Record<string, string>;
+  member_bios?: Record<string, string>; // personnel_id → HTML bio narrative
 }
 
 export interface ProjectScheduleContent {

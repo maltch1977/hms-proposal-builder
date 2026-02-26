@@ -112,17 +112,30 @@ export async function GET(
       content: (s.content || {}) as Record<string, unknown>,
       isEnabled: s.is_enabled,
     })),
-    personnel: (teamMembers || []).map((m) => {
-      const p = (m as unknown as { personnel: Tables<"personnel"> }).personnel;
-      return {
-        fullName: p.full_name,
-        title: p.title,
-        roleType: m.role_override || p.role_type,
-        yearsIndustry: p.years_in_industry,
-        yearsCompany: p.years_at_company,
-        taskDescription: p.task_description,
-      };
-    }),
+    personnel: (() => {
+      // Look up member_bios from key_personnel section content
+      const kpSection = (sections || []).find((s) => {
+        const st = (s as unknown as { section_type: SectionType }).section_type;
+        return st.slug === "key_personnel";
+      });
+      const memberBios = (kpSection?.content as Record<string, unknown> | null)?.member_bios as Record<string, string> | undefined;
+
+      return (teamMembers || []).map((m) => {
+        const p = (m as unknown as { personnel: Tables<"personnel"> }).personnel;
+        return {
+          fullName: p.full_name,
+          title: p.title,
+          roleType: m.role_override || p.role_type,
+          yearsIndustry: p.years_in_industry,
+          yearsCompany: p.years_at_company,
+          yearsWithDistech: p.years_with_distech,
+          taskDescription: p.task_description,
+          specialties: p.specialties || [],
+          certifications: p.certifications || [],
+          bio: memberBios?.[p.id] || null,
+        };
+      });
+    })(),
     caseStudies: (caseStudies || []).map((cs) => {
       const proj = (cs as unknown as { project: Tables<"past_projects"> }).project;
       return {

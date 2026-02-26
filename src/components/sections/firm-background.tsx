@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { RichTextEditor } from "@/components/editor/rich-text-editor";
 import { AuthoredField } from "@/components/editor/authored-field";
 import { LibrarySelector } from "@/components/editor/library-selector";
 import { PolishButton } from "@/components/editor/polish-button";
 import { ContentUploadButton } from "@/components/editor/content-upload-button";
 import { AssetLibraryPanel } from "@/components/editor/asset-library-panel";
+import { SelectedAssetsSummary } from "@/components/editor/selected-assets-summary";
+import { ASSET_CONFIGS } from "@/lib/config/asset-registry";
 import { Button } from "@/components/ui/button";
 import { Library } from "lucide-react";
 import type { FirmBackgroundContent } from "@/lib/types/section";
@@ -36,6 +38,8 @@ export function FirmBackground({
   fieldHighlights,
 }: FirmBackgroundProps) {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const handleSelectionChange = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   return (
     <div className="space-y-6">
@@ -85,11 +89,17 @@ export function FirmBackground({
           <Library className="h-3.5 w-3.5" />
           Manage Case Studies
         </Button>
+        <SelectedAssetsSummary
+          config={ASSET_CONFIGS.past_projects}
+          proposalId={proposalId}
+          refreshKey={refreshKey}
+        />
         <AssetLibraryPanel
           open={panelOpen}
           onOpenChange={setPanelOpen}
           assetType="past_projects"
           proposalId={proposalId}
+          onSelectionChange={handleSelectionChange}
         />
       </div>
     </div>

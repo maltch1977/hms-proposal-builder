@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { generateText, stripCodeFences } from "@/lib/ai/client";
 import { PROPOSAL_POPULATE_SYSTEM } from "@/lib/ai/prompts";
 import type { Json } from "@/lib/types/database";
@@ -102,7 +103,11 @@ export async function POST(request: NextRequest) {
   }
 
   // Fetch profile for organization_id
-  const { data: profile } = await supabase
+  const adminClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { data: profile } = await adminClient
     .from("profiles")
     .select("organization_id")
     .eq("id", user.id)

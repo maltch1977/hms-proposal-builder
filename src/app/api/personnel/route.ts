@@ -16,7 +16,8 @@ async function getAuthedProfile() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("id, organization_id")
     .eq("id", user.id)

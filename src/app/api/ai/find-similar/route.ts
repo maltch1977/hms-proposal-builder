@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { generateText, stripCodeFences } from "@/lib/ai/client";
 import { FIND_SIMILAR_SYSTEM } from "@/lib/ai/prompts";
 import type { SimilarProposal } from "@/lib/ai/types";
+
+function getAdminClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -13,7 +21,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("organization_id")
     .eq("id", user.id)

@@ -1,17 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
-function getAdminClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -19,9 +11,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const admin = getAdminClient();
-
-  // Get user's org
+  const admin = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   const { data: profile } = await admin
     .from("profiles")
     .select("organization_id")
@@ -32,17 +25,24 @@ export async function GET() {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  // Fetch all active profiles in the organization
-  const { data: profiles, error } = await admin
-    .from("profiles")
-    .select("id, full_name, email, avatar_url, role")
+  const sectionTypeId = request.nextUrl.searchParams.get("sectionTypeId");
+
+  let query = admin
+    .from("library_items")
+    .select("*")
     .eq("organization_id", profile.organization_id)
-    .eq("is_active", true)
-    .order("full_name");
+    .order("is_default", { ascending: false })
+    .order("name", { ascending: true });
+
+  if (sectionTypeId) {
+    query = query.eq("section_type_id", sectionTypeId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(profiles || []);
+  return NextResponse.json({ items: data || [] });
 }

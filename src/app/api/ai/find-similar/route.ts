@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateText } from "@/lib/ai/client";
+import { generateText, stripCodeFences } from "@/lib/ai/client";
 import { FIND_SIMILAR_SYSTEM } from "@/lib/ai/prompts";
 import type { SimilarProposal } from "@/lib/ai/types";
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     let matches: SimilarProposal[];
     try {
-      matches = JSON.parse(result);
+      matches = JSON.parse(stripCodeFences(result));
     } catch {
       matches = [];
     }

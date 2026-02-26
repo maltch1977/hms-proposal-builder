@@ -131,6 +131,10 @@ export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
         }
 
         const parsed = await parseRes.json();
+        // Strip time from deadline — keep only the date portion
+        if (parsed.deadline && parsed.deadline.includes("T")) {
+          parsed.deadline = parsed.deadline.split("T")[0];
+        }
         setParsedData(parsed);
         setProjectName(parsed.project_name || "");
         setStep("review");

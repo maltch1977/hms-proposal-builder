@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { analyzeImage, analyzeDocument, downloadStorageFile } from "@/lib/ai/client";
+import { analyzeImage, analyzeDocument, downloadStorageFile, stripCodeFences } from "@/lib/ai/client";
 import { GANTT_ANALYSIS_SYSTEM } from "@/lib/ai/prompts";
 import type { ExecutionStrategyData } from "@/lib/ai/types";
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     let strategy: ExecutionStrategyData;
     try {
-      strategy = JSON.parse(result);
+      strategy = JSON.parse(stripCodeFences(result));
     } catch {
       return NextResponse.json({ error: "Failed to parse Gantt analysis" }, { status: 500 });
     }

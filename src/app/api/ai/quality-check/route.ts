@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateText } from "@/lib/ai/client";
+import { generateText, stripCodeFences } from "@/lib/ai/client";
 import { QUALITY_CHECK_SYSTEM } from "@/lib/ai/prompts";
 import type { QualityCheckIssue } from "@/lib/ai/types";
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     let issues: QualityCheckIssue[];
     try {
-      issues = JSON.parse(result);
+      issues = JSON.parse(stripCodeFences(result));
     } catch {
       issues = [];
     }

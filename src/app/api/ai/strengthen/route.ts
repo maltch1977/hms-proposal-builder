@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateText } from "@/lib/ai/client";
+import { generateText, stripCodeFences } from "@/lib/ai/client";
 import { STRENGTHEN_SYSTEM } from "@/lib/ai/prompts";
 import type { LanguageSuggestion } from "@/lib/ai/types";
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     let suggestions: LanguageSuggestion[];
     try {
-      suggestions = JSON.parse(result);
+      suggestions = JSON.parse(stripCodeFences(result));
     } catch {
       suggestions = [];
     }

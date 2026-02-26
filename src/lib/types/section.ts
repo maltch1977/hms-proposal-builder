@@ -72,8 +72,22 @@ export interface InterviewPanelContent {
   requirement_responses?: Record<string, string>;
 }
 
+export interface PricingRow {
+  id: string;
+  description: string;
+  values: Record<string, string>; // column_id -> dollar amount string
+}
+
+export interface PricingColumn {
+  id: string;
+  name: string;
+  type: "base" | "alternate" | "value_engineering";
+}
+
 export interface ProjectCostContent {
-  // Cost items stored in proposal_cost_items table (legacy)
+  columns?: PricingColumn[];
+  rows?: PricingRow[];
+  notes?: string;
   files?: Array<{
     url: string;
     path: string;

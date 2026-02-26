@@ -48,20 +48,18 @@ export function LibrarySelector({
 
     const fetchItems = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("library_items")
-        .select("*")
-        .eq("section_type_id", sectionTypeId)
-        .eq("organization_id", profile.organization_id)
-        .order("is_default", { ascending: false })
-        .order("name", { ascending: true });
-
-      setItems(data || []);
+      try {
+        const res = await fetch(`/api/library?sectionTypeId=${sectionTypeId}`);
+        const data = await res.json();
+        setItems(data.items || []);
+      } catch {
+        setItems([]);
+      }
       setLoading(false);
     };
 
     fetchItems();
-  }, [open, sectionTypeId, profile, supabase]);
+  }, [open, sectionTypeId, profile]);
 
   const selectedItem = items.find((i) => i.id === selectedItemId);
 

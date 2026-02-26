@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { analyzeImage, analyzeDocument, downloadStorageFile } from "@/lib/ai/client";
+import { analyzeImage, analyzeDocument, downloadStorageFile, stripCodeFences } from "@/lib/ai/client";
 import { RFP_PARSE_SYSTEM } from "@/lib/ai/prompts";
 
 export async function POST(request: NextRequest) {
@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    console.log("[parse-rfp] Downloading file from storage...");
     const { base64, contentType } = await downloadStorageFile(supabase, bucket, path);
+    console.log(`[parse-rfp] File downloaded: ${contentType}, ${Math.round(base64.length / 1024)}KB base64. Calling AI...`);
 
     let parsed: string;
 
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
         base64,
         "application/pdf",
         "Analyze this RFP document and extract all requirements and project details.",
-        { system: RFP_PARSE_SYSTEM, model: "claude-opus-4-6", maxTokens: 8192 }
+        { system: RFP_PARSE_SYSTEM, model: "claude-sonnet-4-5-20250929", maxTokens: 8192 }
       );
     } else {
       const mediaType = contentType.includes("png") ? "image/png" : "image/jpeg";
@@ -49,13 +51,13 @@ export async function POST(request: NextRequest) {
         base64,
         mediaType as "image/png" | "image/jpeg",
         "Analyze this RFP document and extract all requirements and project details.",
-        { system: RFP_PARSE_SYSTEM, model: "claude-opus-4-6", maxTokens: 8192 }
+        { system: RFP_PARSE_SYSTEM, model: "claude-sonnet-4-5-20250929", maxTokens: 8192 }
       );
     }
 
     let rfpData;
     try {
-      rfpData = JSON.parse(parsed);
+      rfpData = JSON.parse(stripCodeFences(parsed));
     } catch {
       console.error("JSON parse failed. Raw AI response:", parsed.substring(0, 500));
       return NextResponse.json({ error: "Failed to parse RFP data" }, { status: 500 });

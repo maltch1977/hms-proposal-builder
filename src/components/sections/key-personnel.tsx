@@ -26,6 +26,8 @@ import type { AssetItem } from "@/lib/types/asset-library";
 type Personnel = Tables<"personnel">;
 type ProposalTeamMember = Tables<"proposal_team_members">;
 
+const DEFAULT_ORG_CHART_URL = "/images/hms_org_chart.png";
+
 export interface TeamMemberWithPersonnel extends ProposalTeamMember {
   personnel: Personnel;
 }
@@ -271,11 +273,11 @@ export function KeyPersonnel({
 
       {teamMembers.length > 0 && (
         <>
-          {orgChartMode === "upload" && content?.org_chart_image ? (
+          {orgChartMode === "upload" ? (
             <div className="flex justify-center py-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={content.org_chart_image}
+                src={content?.org_chart_image || DEFAULT_ORG_CHART_URL}
                 alt="Organization Chart"
                 className="max-w-full max-h-[400px] object-contain rounded-lg border border-border"
               />

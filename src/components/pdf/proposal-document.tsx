@@ -183,7 +183,7 @@ export function ProposalDocument({ data }: ProposalDocumentProps) {
                     personnel={data.personnel}
                     orgChartImageUrl={
                       (section.content.org_chart_mode || "upload") === "upload"
-                        ? (section.content.org_chart_image as string | undefined)
+                        ? (section.content.org_chart_image as string | undefined) || undefined
                         : undefined
                     }
                   />

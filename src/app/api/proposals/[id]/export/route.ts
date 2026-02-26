@@ -119,12 +119,28 @@ export async function GET(
     companyEmail: org?.company_email || undefined,
     companyWebsite: org?.company_website || undefined,
     footerText: org?.footer_text || undefined,
-    sections: (sections || []).map((s) => ({
-      slug: (s as unknown as { section_type: SectionType }).section_type.slug,
-      displayName: (s as unknown as { section_type: SectionType }).section_type.display_name,
-      content: (s.content || {}) as Record<string, unknown>,
-      isEnabled: s.is_enabled,
-    })),
+    sections: (sections || []).map((s) => {
+      const slug = (s as unknown as { section_type: SectionType }).section_type.slug;
+      const content = (s.content || {}) as Record<string, unknown>;
+
+      // Resolve org chart image path for server-side PDF rendering
+      if (slug === "key_personnel") {
+        const mode = (content.org_chart_mode as string) || "upload";
+        if (mode === "upload") {
+          const imgUrl = (content.org_chart_image as string) || "/images/hms_org_chart.png";
+          content.org_chart_image = imgUrl.startsWith("/")
+            ? path.join(process.cwd(), "public", imgUrl)
+            : imgUrl;
+        }
+      }
+
+      return {
+        slug,
+        displayName: (s as unknown as { section_type: SectionType }).section_type.display_name,
+        content,
+        isEnabled: s.is_enabled,
+      };
+    }),
     personnel: (() => {
       // Look up member_bios from key_personnel section content
       const kpSection = (sections || []).find((s) => {

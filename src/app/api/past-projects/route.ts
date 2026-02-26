@@ -13,16 +13,24 @@ async function getAuthedProfile() {
   const supabase = await createClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) {
+    console.error("[past-projects] auth.getUser failed:", authError?.message || "no user");
+    return null;
+  }
+  console.log("[past-projects] user:", user.id, user.email);
 
   const admin = getAdminClient();
-  const { data: profile } = await admin
+  const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select("id, organization_id")
     .eq("id", user.id)
     .single();
 
+  if (!profile) {
+    console.error("[past-projects] profile lookup failed:", profileError?.message || "no profile row");
+  }
   return profile;
 }
 

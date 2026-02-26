@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { TeamSelector } from "@/components/sections/team-selector";
 import { OrgChart } from "@/components/sections/org-chart";
 import { PersonnelTable } from "@/components/sections/personnel-table";
 import { LibrarySelector } from "@/components/editor/library-selector";
+import { AssetLibraryPanel } from "@/components/editor/asset-library-panel";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Library } from "lucide-react";
 import type { Tables } from "@/lib/types/database";
 import type { KeyPersonnelContent } from "@/lib/types/section";
 
@@ -36,6 +39,8 @@ export function KeyPersonnel({
   libraryItemId,
   onLibrarySelect,
 }: KeyPersonnelProps) {
+  const [panelOpen, setPanelOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       {sectionTypeId && onLibrarySelect && (
@@ -64,10 +69,21 @@ export function KeyPersonnel({
         </div>
       )}
 
-      <TeamSelector
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-2"
+        onClick={() => setPanelOpen(true)}
+      >
+        <Library className="h-3.5 w-3.5" />
+        Manage Team Members
+      </Button>
+      <AssetLibraryPanel
+        open={panelOpen}
+        onOpenChange={setPanelOpen}
+        assetType="personnel"
         proposalId={proposalId}
-        selectedMembers={teamMembers}
-        onTeamChange={onTeamChange}
+        onSelectionChange={onTeamChange}
       />
 
       {teamMembers.length > 0 && (

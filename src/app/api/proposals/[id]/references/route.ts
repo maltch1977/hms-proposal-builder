@@ -111,3 +111,35 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getAuthedUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { updates } = body as { updates: { id: string; order_index: number }[] };
+
+  if (!updates || !Array.isArray(updates)) {
+    return NextResponse.json({ error: "Missing updates array" }, { status: 400 });
+  }
+
+  const admin = getAdminClient();
+
+  for (const { id, order_index } of updates) {
+    const { error } = await admin
+      .from("proposal_references")
+      .update({ order_index })
+      .eq("id", id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json({ success: true });
+}

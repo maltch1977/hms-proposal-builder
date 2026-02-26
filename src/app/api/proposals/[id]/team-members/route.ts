@@ -116,13 +116,30 @@ export async function PATCH(
   }
 
   const body = await request.json();
+  const admin = getAdminClient();
+
+  // Batch reorder mode
+  if (body.updates && Array.isArray(body.updates)) {
+    for (const { id, order_index } of body.updates as { id: string; order_index: number }[]) {
+      const { error } = await admin
+        .from("proposal_team_members")
+        .update({ order_index })
+        .eq("id", id);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  // Single hierarchy update mode (existing behavior)
   const { member_id, hierarchy_position } = body;
 
   if (!member_id) {
     return NextResponse.json({ error: "Missing member_id" }, { status: 400 });
   }
 
-  const admin = getAdminClient();
   const { error } = await admin
     .from("proposal_team_members")
     .update({ hierarchy_position })

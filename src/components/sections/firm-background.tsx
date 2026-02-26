@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { RichTextEditor } from "@/components/editor/rich-text-editor";
 import { AuthoredField } from "@/components/editor/authored-field";
 import { LibrarySelector } from "@/components/editor/library-selector";
 import { PolishButton } from "@/components/editor/polish-button";
 import { ContentUploadButton } from "@/components/editor/content-upload-button";
-import { CaseStudySelector } from "@/components/sections/case-study-selector";
+import { AssetLibraryPanel } from "@/components/editor/asset-library-panel";
+import { Button } from "@/components/ui/button";
+import { Library } from "lucide-react";
 import type { FirmBackgroundContent } from "@/lib/types/section";
 import type { Tables } from "@/lib/types/database";
 import type { FieldAttribution } from "@/lib/utils/derive-field-attributions";
@@ -32,6 +35,8 @@ export function FirmBackground({
   fieldAttributions,
   fieldHighlights,
 }: FirmBackgroundProps) {
+  const [panelOpen, setPanelOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       <div>
@@ -71,7 +76,21 @@ export function FirmBackground({
         <p className="text-xs text-muted-foreground mb-4">
           Select 1-5 past projects to showcase as case studies.
         </p>
-        <CaseStudySelector proposalId={proposalId} />
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => setPanelOpen(true)}
+        >
+          <Library className="h-3.5 w-3.5" />
+          Manage Case Studies
+        </Button>
+        <AssetLibraryPanel
+          open={panelOpen}
+          onOpenChange={setPanelOpen}
+          assetType="past_projects"
+          proposalId={proposalId}
+        />
       </div>
     </div>
   );

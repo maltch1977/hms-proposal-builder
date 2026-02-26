@@ -14,7 +14,6 @@ interface AssetCardProps {
   onDelete?: () => void;
   onAdd?: () => void;
   onRemove?: () => void;
-  disabled?: boolean;
 }
 
 export function AssetCard({
@@ -23,33 +22,31 @@ export function AssetCard({
   onEdit,
   onDelete,
   onAdd,
-  onRemove,
 }: AssetCardProps) {
   return (
-    <div className="group flex items-center gap-2 rounded-md border border-border px-3 py-2 transition-colors hover:bg-accent/50">
+    <div
+      className={cn(
+        "group flex items-center gap-2 rounded-md border border-border px-3 py-2 transition-colors",
+        onAdd && "cursor-pointer hover:bg-accent/50"
+      )}
+      onClick={onAdd}
+    >
+      {onAdd && (
+        <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{config.getTitle(item)}</p>
         <p className="text-xs text-muted-foreground truncate">{config.getSubtitle(item)}</p>
       </div>
       <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
         {onEdit && (
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onEdit} title="Edit">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onEdit(); }} title="Edit">
             <Pencil className="h-3.5 w-3.5" />
           </Button>
         )}
         {onDelete && (
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={onDelete} title="Delete">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }} title="Delete">
             <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        )}
-        {onAdd && (
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" onClick={onAdd} title="Add">
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-        )}
-        {onRemove && (
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" onClick={onRemove} title="Remove">
-            <X className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
@@ -109,14 +106,14 @@ export function SortableAssetCard({
         <p className="text-sm font-medium truncate">{config.getTitle(item)}</p>
         <p className="text-xs text-muted-foreground truncate">{config.getSubtitle(item)}</p>
       </div>
-      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 shrink-0">
         {onEdit && (
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onEdit} title="Edit">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={onEdit} title="Edit">
             <Pencil className="h-3.5 w-3.5" />
           </Button>
         )}
         {onDelete && (
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={onDelete} title="Delete">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={onDelete} title="Delete">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}

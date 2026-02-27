@@ -60,7 +60,7 @@ const sharedCSS = `
   section.pdf-section { break-before: page; }
   section.pdf-section:first-child { break-before: auto; }
   h2, h3, .section-title-bar { break-after: avoid; }
-  .data-table, .personnel-card, .phase-card, .case-study-card { break-inside: avoid; }
+  .data-table, .personnel-card, .phase-card { break-inside: avoid; }
   p { orphans: 3; widows: 3; }
 
   /* Section title bar */
@@ -537,7 +537,7 @@ function renderFirmBackgroundSection(
             ${cs.squareFootage ? `<div style="text-align: center; font-size: 7.5pt; color: ${C.darkGray}; margin-bottom: 2px;">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
             <div>
               ${photo ? `<img src="${photo}" style="float: right; width: 150px; height: 90px; object-fit: cover; margin: 0 0 2px 8px; border-radius: 2px;" />` : ""}
-              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 7.5pt; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;">${esc(cs.narrative)}</div>` : ""}
+              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 7.5pt; line-height: 1.3;">${esc(cs.narrative)}</div>` : ""}
             </div>
           </div>`;
             }

@@ -60,7 +60,7 @@ const sharedCSS = `
   section.pdf-section { break-before: page; }
   section.pdf-section:first-child { break-before: auto; }
   h2, h3, .section-title-bar { break-after: avoid; }
-  .data-table, .personnel-card, .phase-card { break-inside: avoid; }
+  .data-table, .personnel-card, .phase-card, .case-study-card { break-inside: avoid; }
   p { orphans: 3; widows: 3; }
 
   /* Section title bar */

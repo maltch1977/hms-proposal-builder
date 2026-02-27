@@ -39,6 +39,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     reorderSections,
     addSection,
     deleteSection,
+    onSaveCompleteRef,
   } = useProposal(proposalId);
   const { profile, signOut } = useAuth();
   const isCollaboratorOnly = isCollaboratorOnlyProp ?? profile?.role === "proposal_user";
@@ -71,6 +72,12 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
   }>>([]);
 
   const { changes, loading: changesLoading, refetch: refetchChanges } = useProposalChanges(proposalId);
+
+  // Refetch change attributions only after debounced saves complete (not on every keystroke)
+  useEffect(() => {
+    onSaveCompleteRef.current = refetchChanges;
+    return () => { onSaveCompleteRef.current = null; };
+  }, [onSaveCompleteRef, refetchChanges]);
 
   const fieldAttributions = useMemo(
     () => deriveFieldAttributions(changes, collaborators),
@@ -360,9 +367,8 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
   const handleUpdateContent = useCallback(
     async (sectionId: string, content: Record<string, unknown>, changeType?: "human" | "ai") => {
       await updateSection(sectionId, { content: content as Record<string, unknown> & import("@/lib/types/database").Json }, changeType);
-      refetchChanges();
     },
-    [updateSection, refetchChanges]
+    [updateSection]
   );
 
   const handleUpdateSection = useCallback(

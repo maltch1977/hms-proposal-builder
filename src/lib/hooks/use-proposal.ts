@@ -73,6 +73,7 @@ export function useProposal(proposalId: string) {
   // Debounced save: collect the latest updates per section and flush after 800ms of inactivity
   const pendingRef = useRef<Record<string, { updates: { content?: Json; is_enabled?: boolean; order_index?: number; library_item_id?: string | null }; changeType?: "human" | "ai" }>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSaveCompleteRef = useRef<(() => void) | null>(null);
 
   const flushSave = useCallback(async () => {
     const pending = { ...pendingRef.current };
@@ -101,6 +102,7 @@ export function useProposal(proposalId: string) {
       })
     );
     setSaving(false);
+    onSaveCompleteRef.current?.();
   }, []);
 
   // Flush on unmount so nothing is lost
@@ -269,5 +271,6 @@ export function useProposal(proposalId: string) {
     addSection,
     deleteSection,
     refetch: fetchProposal,
+    onSaveCompleteRef,
   };
 }

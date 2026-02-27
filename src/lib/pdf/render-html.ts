@@ -436,7 +436,7 @@ export async function renderScheduleLandscapeHtml(
   const body = scheduleFileImages
     .map(
       (img, i) => `<div style="${i > 0 ? "break-before: page;" : ""} text-align: center;">
-        <img src="${img}" style="max-width: 100%; height: auto;" />
+        <img src="${img}" style="max-width: 100%; max-height: 6.5in; object-fit: contain;" />
       </div>`
     )
     .join("");

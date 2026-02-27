@@ -537,7 +537,7 @@ function renderFirmBackgroundSection(
             ${cs.squareFootage ? `<div style="text-align: center; font-size: 8pt; color: ${C.darkGray}; margin-bottom: 4px;">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
             <div>
               ${photo ? `<img src="${photo}" style="float: right; width: 170px; height: 110px; object-fit: cover; margin: 0 0 4px 10px; border-radius: 2px;" />` : ""}
-              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 8pt; line-height: 1.35;">${esc(cs.narrative)}</div>` : ""}
+              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 8pt; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;">${esc(cs.narrative)}</div>` : ""}
             </div>
           </div>`;
             }

@@ -45,6 +45,24 @@ function fontFaceCSS(base64: string): string {
 }
 
 // ─── Shared CSS ──────────────────────────────────────────────
+//
+// Type scale:
+//   Section banner .... 13pt  700  white on navy
+//   h2 (tiptap) ...... 12pt  700  navy
+//   h3 / subsection .. 10.5pt 700  navy
+//   Body / p ......... 10pt  400  #333
+//   Card title ....... 10pt  700  navy
+//   Secondary ........ 9pt   400  #666
+//   Table cell ....... 9pt   400  #333
+//   Fine print ....... 8.5pt 400  #666
+//
+// Spacing:
+//   After section banner: 14px
+//   Before subsection:    16px   After: 6px
+//   Between paragraphs:   8px
+//   Between cards:        10px
+//   Card padding:         8px 10px
+
 const sharedCSS = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -63,54 +81,54 @@ const sharedCSS = `
   .data-table, .personnel-card, .phase-card, .case-study-card { break-inside: avoid; }
   p { orphans: 3; widows: 3; }
 
-  /* Section title bar */
+  /* Section title bar — 13pt bold white on navy */
   .section-title-bar {
     background: ${C.navy};
     color: ${C.white};
-    font-size: 14pt;
+    font-size: 13pt;
     font-weight: 700;
-    padding: 8px 14px;
-    margin-bottom: 16px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
   }
 
-  /* Subsection title */
+  /* Subsection title — 10.5pt bold navy */
   .subsection-title {
-    font-size: 11pt;
+    font-size: 10.5pt;
     font-weight: 700;
     color: ${C.navy};
-    margin-bottom: 8px;
-    margin-top: 14px;
+    margin-top: 16px;
+    margin-bottom: 6px;
   }
 
   /* Gold accent bar */
   .gold-accent {
     width: 40px;
     border-bottom: 2px solid ${C.gold};
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
 
-  /* TipTap HTML passthrough styles */
+  /* TipTap HTML passthrough */
   .tiptap-content h2 {
-    font-size: 13pt;
+    font-size: 12pt;
     font-weight: 700;
     color: ${C.navy};
-    margin-top: 14px;
+    margin-top: 16px;
     margin-bottom: 6px;
   }
   .tiptap-content h3 {
-    font-size: 11pt;
+    font-size: 10.5pt;
     font-weight: 700;
     color: ${C.navy};
-    margin-top: 10px;
+    margin-top: 12px;
     margin-bottom: 4px;
   }
   .tiptap-content p {
-    margin-bottom: 14px;
+    margin-bottom: 8px;
     line-height: 1.6;
   }
   .tiptap-content ul, .tiptap-content ol {
     margin-left: 18px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .tiptap-content li {
     margin-bottom: 2px;
@@ -124,7 +142,7 @@ const sharedCSS = `
   .tiptap-content hr {
     border: none;
     border-top: 1px solid ${C.mediumGray};
-    margin: 12px 0;
+    margin: 10px 0;
   }
   .tiptap-content mark,
   .tiptap-content [data-color],
@@ -133,16 +151,16 @@ const sharedCSS = `
     background: none !important;
   }
 
-  /* Tables */
+  /* Tables — 9pt body, 8.5pt header */
   .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 8px 0;
+    margin: 6px 0;
   }
   .data-table thead th {
     background: ${C.navy};
     color: ${C.white};
-    font-size: 9pt;
+    font-size: 8.5pt;
     font-weight: 700;
     padding: 6px 8px;
     text-align: left;
@@ -160,37 +178,41 @@ const sharedCSS = `
     background: ${C.navy};
     color: ${C.white};
     font-weight: 700;
-    font-size: 11pt;
-    padding: 8px;
+    font-size: 10pt;
+    padding: 6px 8px;
   }
 
-  /* Cards */
+  /* Case study cards */
   .case-study-card {
-    margin-bottom: 10px;
-    padding: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
     border: 0.5px solid ${C.mediumGray};
     border-left: 3px solid ${C.gold};
     border-radius: 2px;
   }
   .case-study-card .cs-name {
-    font-size: 10pt;
+    font-size: 9.5pt;
     font-weight: 700;
     color: ${C.navy};
+    text-align: center;
+    text-decoration: underline;
+    margin-bottom: 2px;
   }
   .case-study-card .cs-meta {
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: ${C.darkGray};
-    margin-top: 2px;
+    text-align: center;
+    margin-bottom: 4px;
   }
   .case-study-card .cs-narrative {
-    font-size: 9pt;
-    margin-top: 4px;
-    line-height: 1.5;
+    font-size: 8.5pt;
+    line-height: 1.4;
   }
 
+  /* Personnel cards */
   .personnel-card {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
     border-bottom: 0.5px solid ${C.mediumGray};
   }
   .personnel-card:last-child { border-bottom: none; }
@@ -202,25 +224,26 @@ const sharedCSS = `
   .personnel-card .p-role {
     font-size: 9pt;
     color: ${C.darkGray};
-    margin-top: 1px;
-  }
-  .personnel-card .p-stats {
-    font-size: 8pt;
-    color: ${C.darkGray};
-    margin-top: 3px;
-  }
-  .personnel-card .p-certs {
-    font-size: 8pt;
-    color: ${C.darkGray};
     margin-top: 2px;
   }
-  .personnel-card .p-bio {
+  .personnel-card .p-stats {
+    font-size: 8.5pt;
+    color: ${C.darkGray};
     margin-top: 4px;
   }
+  .personnel-card .p-certs {
+    font-size: 8.5pt;
+    color: ${C.darkGray};
+    margin-top: 4px;
+  }
+  .personnel-card .p-bio {
+    margin-top: 6px;
+  }
 
+  /* Phase cards */
   .phase-card {
-    margin-bottom: 8px;
-    padding: 8px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
     border: 0.5px solid ${C.mediumGray};
     border-radius: 2px;
   }
@@ -232,6 +255,7 @@ const sharedCSS = `
   .phase-card .ph-name {
     font-size: 10pt;
     font-weight: 700;
+    color: ${C.navy};
   }
   .phase-card .ph-duration {
     font-size: 9pt;
@@ -239,19 +263,20 @@ const sharedCSS = `
   }
   .phase-card .ph-desc {
     font-size: 9pt;
-    line-height: 1.4;
+    line-height: 1.5;
     margin-bottom: 4px;
   }
   .phase-card .ph-milestones {
-    margin-left: 12px;
+    margin-left: 14px;
     font-size: 9pt;
     color: ${C.darkGray};
     list-style-type: disc;
   }
 
+  /* Org chart */
   .org-chart-image {
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
   .org-chart-image img {
     max-width: 100%;
@@ -261,19 +286,13 @@ const sharedCSS = `
   /* Divider */
   .divider {
     border-top: 1px solid ${C.mediumGray};
-    margin: 12px 0;
+    margin: 10px 0;
   }
 
   /* Utility */
   .text-right { text-align: right; }
   .text-center { text-align: center; }
   .font-bold { font-weight: 700; }
-  .text-sm { font-size: 9pt; }
-  .text-xs { font-size: 8pt; }
-  .mt-2 { margin-top: 8px; }
-  .mt-3 { margin-top: 12px; }
-  .mb-2 { margin-bottom: 8px; }
-  .mb-3 { margin-bottom: 12px; }
 `;
 
 // ─── Helper: wrap HTML in a full document ────────────────────
@@ -465,7 +484,7 @@ export async function renderScheduleLandscapeHtml(
             border-bottom: 2px solid #C9A227; padding-bottom: 6px;
           ">
             <div style="display: flex; align-items: center; gap: 8px;">
-              ${pageInfo.logoBase64 ? `<img src="${pageInfo.logoBase64}" style="width: 28px; height: 28px; object-fit: contain;" />` : ""}
+              ${pageInfo.logoBase64 ? `<img src="${pageInfo.logoBase64}" style="width: 56px; height: 56px; object-fit: contain;" />` : ""}
               <div>
                 <div style="font-weight: 700; color: #1B365D; letter-spacing: 1px; font-size: 8px;">
                   ${(pageInfo.companyName || "HMS Commercial Service, Inc.").toUpperCase()}
@@ -584,21 +603,19 @@ function renderFirmBackgroundSection(
 
   if (caseStudies.length > 0) {
     content += `
-      <div style="margin-top: 8px;">
-        <div class="subsection-title" style="margin-bottom: 4px;">Case Studies</div>
+      <div>
+        <div class="subsection-title">Case Studies</div>
         ${caseStudies
           .map(
             (cs, idx) => {
               const photo = caseStudyPhotos[idx] || "";
               return `
-          <div class="case-study-card" style="overflow: hidden; margin-bottom: 3px; padding: 4px 8px;">
-            <div class="cs-name" style="text-align: center; font-size: 9.5pt; margin-bottom: 1px; text-decoration: underline;">
-              ${esc(cs.projectName)}
-            </div>
-            ${cs.squareFootage ? `<div style="text-align: center; font-size: 7.5pt; color: ${C.darkGray}; margin-bottom: 2px;">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
+          <div class="case-study-card" style="overflow: hidden;">
+            <div class="cs-name">${esc(cs.projectName)}</div>
+            ${cs.squareFootage ? `<div class="cs-meta">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
             <div>
-              ${photo ? `<img src="${photo}" style="float: right; width: 150px; height: 90px; object-fit: cover; margin: 0 0 2px 8px; border-radius: 2px;" />` : ""}
-              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 7.5pt; line-height: 1.3;">${esc(cs.narrative)}</div>` : ""}
+              ${photo ? `<img src="${photo}" style="float: right; width: 150px; height: 90px; object-fit: cover; margin: 0 0 4px 10px; border-radius: 2px;" />` : ""}
+              ${cs.narrative ? `<div class="cs-narrative">${esc(cs.narrative)}</div>` : ""}
             </div>
           </div>`;
             }
@@ -725,13 +742,9 @@ function renderProjectScheduleSection(slug: string, section: {
   if (requirementQA.length > 0) {
     for (const qa of requirementQA) {
       content += `
-        <div style="margin-bottom: 14px;">
-          <div style="font-size: 9.5pt; font-weight: 700; color: ${C.navy}; margin-bottom: 4px;">
-            ${esc(qa.question)}
-          </div>
-          <div style="font-size: 10pt; line-height: 1.6; color: #333333;">
-            ${esc(qa.answer)}
-          </div>
+        <div style="margin-bottom: 10px;">
+          <div class="subsection-title" style="margin-top: 0;">${esc(qa.question)}</div>
+          <div style="line-height: 1.6;">${esc(qa.answer)}</div>
         </div>`;
     }
   }
@@ -806,7 +819,7 @@ function renderSiteLogisticsSection(
   if (emrRatings.length > 0) {
     const sorted = [...emrRatings].sort((a, b) => a.year - b.year);
     content += `
-      <div class="mt-3 subsection-title">Experience Modification Rating (EMR)</div>
+      <div class="subsection-title">Experience Modification Rating (EMR)</div>
       <table class="data-table" style="break-inside: avoid;">
         <thead>
           <tr>${sorted.map((r) => `<th class="text-center">${r.year}</th>`).join("")}</tr>
@@ -947,7 +960,7 @@ function renderProjectCostSection(slug: string, costData: {
 
   if (costData.notes) {
     content += `
-      <div class="mt-2">
+      <div>
         <div class="subsection-title">Notes</div>
         <div style="font-size: 9pt; line-height: 1.5;">${esc(costData.notes)}</div>
       </div>

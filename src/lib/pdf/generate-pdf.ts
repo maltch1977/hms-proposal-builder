@@ -78,7 +78,7 @@ function headerTemplate(
       padding-bottom: 6px;
     ">
       <div style="display: flex; align-items: center; gap: 8px;">
-        ${logoBase64 ? `<img src="${logoBase64}" style="width: 28px; height: 28px; object-fit: contain;" />` : ""}
+        ${logoBase64 ? `<img src="${logoBase64}" style="width: 56px; height: 56px; object-fit: contain;" />` : ""}
         <div>
           <div style="font-weight: 700; color: #1B365D; letter-spacing: 1px; font-size: 8px;">
             ${(companyName || "HMS Commercial Service, Inc.").toUpperCase()}

@@ -839,16 +839,24 @@ function renderQaqcSection(slug: string, section: {
 
 // ─── Reference Check ─────────────────────────────────────────
 function renderReferenceSection(slug: string, references: ReferenceEntry[]): string {
+  // Only include columns where at least one reference has data
+  const cols: { key: keyof ReferenceEntry; label: string; bold?: boolean }[] = [
+    { key: "contactName", label: "Contact", bold: true },
+    { key: "title", label: "Title" },
+    { key: "company", label: "Company" },
+    { key: "category", label: "Category" },
+    { key: "phone", label: "Phone" },
+    { key: "email", label: "Email" },
+  ];
+  const activeCols = cols.filter((col) =>
+    references.some((ref) => ref[col.key] && String(ref[col.key]).trim())
+  );
+
   const rows = references
     .map(
       (ref, idx) => `
       <tr${idx % 2 === 1 ? ` style="background: ${C.lightGray};"` : ""}>
-        <td class="font-bold" style="width: 22%;">${esc(ref.contactName)}</td>
-        <td style="width: 18%;">${esc(ref.title)}</td>
-        <td style="width: 20%;">${esc(ref.company)}</td>
-        <td style="width: 14%;">${esc(ref.category)}</td>
-        <td style="width: 14%;">${esc(ref.phone)}</td>
-        <td style="width: 12%; font-size: 8pt;">${esc(ref.email) || "&mdash;"}</td>
+        ${activeCols.map((col) => `<td${col.bold ? ' class="font-bold"' : ""}>${esc(ref[col.key] as string)}</td>`).join("")}
       </tr>`
     )
     .join("");
@@ -856,14 +864,7 @@ function renderReferenceSection(slug: string, references: ReferenceEntry[]): str
   const content = `
     <table class="data-table">
       <thead>
-        <tr>
-          <th style="width: 22%;">Contact</th>
-          <th style="width: 18%;">Title</th>
-          <th style="width: 20%;">Company</th>
-          <th style="width: 14%;">Category</th>
-          <th style="width: 14%;">Phone</th>
-          <th style="width: 12%;">Email</th>
-        </tr>
+        <tr>${activeCols.map((col) => `<th>${col.label}</th>`).join("")}</tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>

@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
     "/api/proposals/[id]/export": [
       "./public/fonts/**/*",
       "./public/images/**/*",
+      "./node_modules/@sparticuz/chromium/bin/**/*",
     ],
   },
   // Keep webpack canvas alias while @react-pdf/renderer is still installed

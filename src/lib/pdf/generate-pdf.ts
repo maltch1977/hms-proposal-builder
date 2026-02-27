@@ -20,11 +20,13 @@ async function getChromiumConfig(): Promise<{
     };
   }
 
-  // Production (Vercel serverless): use @sparticuz/chromium
+  // Production (Vercel serverless): use @sparticuz/chromium-min with remote binary
   if (isServerless) {
-    const chromium = (await import("@sparticuz/chromium")).default;
+    const chromium = (await import("@sparticuz/chromium-min")).default;
     return {
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath(
+        "https://github.com/nichochar/chromium-brotli/releases/download/v143.0.0/chromium-v143.0.0-pack.tar"
+      ),
       args: chromium.args,
     };
   }

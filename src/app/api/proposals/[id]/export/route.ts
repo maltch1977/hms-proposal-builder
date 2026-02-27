@@ -238,6 +238,11 @@ export async function GET(
       referenceCount: docData.references.length,
       costRowCount: docData.costData.rows.length,
       emrRatingCount: docData.emrRatings.length,
+      scheduleFiles: (() => {
+        const schedSec = docData.sections.find(s => s.slug === "project_schedule");
+        const files = (schedSec?.content.files as Array<{ url: string; filename: string; type: string }>) || [];
+        return { count: files.length, files: files.map(f => ({ filename: f.filename, type: f.type })) };
+      })(),
     });
   }
 

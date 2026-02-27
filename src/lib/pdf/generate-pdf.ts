@@ -131,6 +131,7 @@ export async function generateProposalPdf(
       logoBase64: images.logoBase64,
       orgChartBase64: images.orgChartBase64,
       caseStudyPhotos: images.caseStudyPhotos,
+      scheduleFileImages: images.scheduleFileImages,
     }),
   ]);
 

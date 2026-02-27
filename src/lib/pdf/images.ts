@@ -62,6 +62,7 @@ export async function resolveAllImages(data: {
   coverPhotoBase64: string;
   orgChartBase64: string;
   caseStudyPhotos: string[];
+  scheduleFileImages: string[];
 }> {
   // Find org chart URL from key_personnel section
   const kpSection = data.sections.find((s) => s.slug === "key_personnel");
@@ -71,7 +72,14 @@ export async function resolveAllImages(data: {
       ? (kpSection.content.org_chart_image as string | undefined) || ""
       : "";
 
-  const [logoBase64, coverPhotoBase64, orgChartBase64, ...caseStudyPhotos] =
+  // Find schedule file URLs from project_schedule section (images only)
+  const schedSection = data.sections.find((s) => s.slug === "project_schedule");
+  const schedFiles = (schedSection?.content.files as Array<{ url: string; filename: string; type: string }>) || [];
+  const schedImageUrls = schedFiles
+    .filter((f) => f.type && f.type.startsWith("image/"))
+    .map((f) => f.url);
+
+  const [logoBase64, coverPhotoBase64, orgChartBase64, ...rest] =
     await Promise.all([
       resolveImageToBase64(data.logoUrl || ""),
       resolveImageToBase64(data.coverPhotoUrl || ""),
@@ -79,7 +87,11 @@ export async function resolveAllImages(data: {
       ...data.caseStudies.map((cs) =>
         resolveImageToBase64(cs.photoUrl || "")
       ),
+      ...schedImageUrls.map((url) => resolveImageToBase64(url)),
     ]);
 
-  return { logoBase64, coverPhotoBase64, orgChartBase64, caseStudyPhotos };
+  const caseStudyPhotos = rest.slice(0, data.caseStudies.length);
+  const scheduleFileImages = rest.slice(data.caseStudies.length);
+
+  return { logoBase64, coverPhotoBase64, orgChartBase64, caseStudyPhotos, scheduleFileImages };
 }

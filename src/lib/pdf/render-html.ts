@@ -407,7 +407,7 @@ export async function renderCoverHtml(
 
 export async function renderBodyHtml(
   data: ProposalDocumentData,
-  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] }
+  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[]; scheduleFileImages: string[] }
 ): Promise<string> {
   const fontBase64 = await getFontBase64();
   const enabledSections = data.sections.filter((s) => s.isEnabled);
@@ -438,7 +438,7 @@ export async function renderBodyHtml(
 function renderSection(
   section: { slug: string; displayName: string; content: Record<string, unknown> },
   data: ProposalDocumentData,
-  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] },
+  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[]; scheduleFileImages: string[] },
   tocEntries: { slug: string; title: string }[],
   caseStudyPhotos: string[]
 ): string | null {
@@ -456,7 +456,7 @@ function renderSection(
     case "key_personnel":
       return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64);
     case "project_schedule":
-      return renderProjectScheduleSection(section.slug, section);
+      return renderProjectScheduleSection(section.slug, section, images.scheduleFileImages);
     case "site_logistics":
       return renderSiteLogisticsSection(section.slug, section, data.emrRatings);
     case "qaqc_commissioning":
@@ -630,7 +630,7 @@ function renderPersonnelCards(personnel: PersonnelEntry[]): string {
 // ─── Project Schedule ────────────────────────────────────────
 function renderProjectScheduleSection(slug: string, section: {
   content: Record<string, unknown>;
-}): string {
+}, scheduleFileImages: string[]): string {
   const outputMode = (section.content.output_mode as string) || "raw";
   const strategy = section.content.execution_strategy as
     | {
@@ -652,7 +652,15 @@ function renderProjectScheduleSection(slug: string, section: {
 
   let content = "";
 
-  if (showGantt) {
+  if (showGantt && scheduleFileImages.length > 0) {
+    content += scheduleFileImages
+      .map(
+        (img) => `<div style="margin-bottom: 12px; text-align: center;">
+          <img src="${img}" style="max-width: 100%; height: auto;" />
+        </div>`
+      )
+      .join("");
+  } else if (showGantt) {
     content += `<div class="tiptap-content"><p>See attached Gantt chart(s).</p></div>`;
   }
 

@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer-core";
+import puppeteer, { type Browser } from "puppeteer-core";
 import { PDFDocument } from "pdf-lib";
 import type { ProposalDocumentData } from "./types";
 import { resolveAllImages, resolveSchedulePdfBuffers } from "./images";
@@ -113,42 +113,91 @@ function footerTemplate(companyName: string): string {
   `;
 }
 
+// ─── PDF-to-Image Conversion ─────────────────────────────────
+
+let _pdfjsCache: { main: string; worker: string } | null = null;
+
+async function fetchPdfjsScripts(): Promise<{ main: string; worker: string }> {
+  if (_pdfjsCache) return _pdfjsCache;
+  const [main, worker] = await Promise.all([
+    fetch("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js").then((r) => r.text()),
+    fetch("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js").then((r) => r.text()),
+  ]);
+  _pdfjsCache = { main, worker };
+  return _pdfjsCache;
+}
+
+async function convertSchedulePdfToImages(
+  browser: Browser,
+  pdfBuffers: Uint8Array[]
+): Promise<string[]> {
+  if (pdfBuffers.length === 0) return [];
+
+  const scripts = await fetchPdfjsScripts();
+  const allImages: string[] = [];
+
+  for (const buf of pdfBuffers) {
+    const pdfBase64 = Buffer.from(buf).toString("base64");
+    const page = await browser.newPage();
+
+    try {
+      await page.setContent(
+        `<!DOCTYPE html><html><body>
+          <script>${scripts.main}<\/script>
+          <script>
+            var _workerBlob = new Blob([${JSON.stringify(scripts.worker)}], {type:'text/javascript'});
+            pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(_workerBlob);
+          </script>
+        </body></html>`,
+        { waitUntil: "domcontentloaded" }
+      );
+
+      const images: string[] = await page.evaluate(async (b64: string) => {
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+
+        // @ts-expect-error pdfjsLib loaded via script tag
+        const pdf = await pdfjsLib.getDocument({ data: arr }).promise;
+        const results: string[] = [];
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const pg = await pdf.getPage(pageNum);
+          const vp = pg.getViewport({ scale: 2 });
+          const canvas = document.createElement("canvas");
+          canvas.width = vp.width;
+          canvas.height = vp.height;
+          const ctx = canvas.getContext("2d")!;
+          await pg.render({ canvasContext: ctx, viewport: vp }).promise;
+          results.push(canvas.toDataURL("image/png"));
+        }
+
+        return results;
+      }, pdfBase64);
+
+      allImages.push(...images);
+    } catch (err) {
+      console.warn("[pdf/generate] Failed to convert schedule PDF to images:", err);
+    } finally {
+      await page.close();
+    }
+  }
+
+  return allImages;
+}
+
 // ─── Main PDF Generator ──────────────────────────────────────
 
 export async function generateProposalPdf(
   data: ProposalDocumentData
 ): Promise<Uint8Array> {
-  // 1. Resolve all images and schedule PDFs in parallel
+  // 1. Resolve all images and fetch schedule PDF buffers in parallel
   const [images, schedulePdfBuffers] = await Promise.all([
     resolveAllImages(data),
     resolveSchedulePdfBuffers(data),
   ]);
 
-  // Pre-load schedule PDFs and count total pages for TOC offset
-  const schedulePdfDocs: { doc: PDFDocument; pageCount: number }[] = [];
-  let totalSchedulePdfPages = 0;
-  for (const buf of schedulePdfBuffers) {
-    const doc = await PDFDocument.load(buf);
-    const pageCount = doc.getPageCount();
-    schedulePdfDocs.push({ doc, pageCount });
-    totalSchedulePdfPages += pageCount;
-  }
-
-  // 2. Render HTML
-  const [coverHtml, bodyHtml] = await Promise.all([
-    renderCoverHtml(data, {
-      logoBase64: images.logoBase64,
-      coverPhotoBase64: images.coverPhotoBase64,
-    }),
-    renderBodyHtml(data, {
-      logoBase64: images.logoBase64,
-      orgChartBase64: images.orgChartBase64,
-      caseStudyPhotos: images.caseStudyPhotos,
-      scheduleFileImages: images.scheduleFileImages,
-    }),
-  ]);
-
-  // 3. Launch Puppeteer
+  // 2. Launch Puppeteer early (needed for PDF-to-image conversion + HTML rendering)
   const { executablePath, args } = await getChromiumConfig();
 
   const browser = await puppeteer.launch({
@@ -159,7 +208,25 @@ export async function generateProposalPdf(
   });
 
   try {
-    // 4. Render cover PDF (no margins, no header/footer)
+    // 3. Convert schedule PDFs to images using pdf.js inside the browser
+    const schedulePdfImages = await convertSchedulePdfToImages(browser, schedulePdfBuffers);
+    const allScheduleImages = [...images.scheduleFileImages, ...schedulePdfImages];
+
+    // 4. Render HTML (with schedule images now available for inline embedding)
+    const [coverHtml, bodyHtml] = await Promise.all([
+      renderCoverHtml(data, {
+        logoBase64: images.logoBase64,
+        coverPhotoBase64: images.coverPhotoBase64,
+      }),
+      renderBodyHtml(data, {
+        logoBase64: images.logoBase64,
+        orgChartBase64: images.orgChartBase64,
+        caseStudyPhotos: images.caseStudyPhotos,
+        scheduleFileImages: allScheduleImages,
+      }),
+    ]);
+
+    // 5. Render cover PDF (no margins, no header/footer)
     const coverPage = await browser.newPage();
     await coverPage.setContent(coverHtml, { waitUntil: "networkidle0" });
     const coverPdfBuffer = await coverPage.pdf({
@@ -169,7 +236,7 @@ export async function generateProposalPdf(
     });
     await coverPage.close();
 
-    // 5. Render body PDF (two-pass: measure page counts, then render with TOC page numbers)
+    // 6. Render body PDF (two-pass: measure page counts, then render with TOC page numbers)
     const hasCover = data.sections.some(
       (s) => s.slug === "cover_page" && s.isEnabled
     );
@@ -225,21 +292,12 @@ export async function generateProposalPdf(
       pageCounts[slug] = tempDoc.getPageCount();
     }
 
-    // Calculate cumulative start pages, accounting for schedule PDF inserts
+    // Calculate cumulative start pages
     let currentPage = 1;
     const pageMap: Record<string, number> = {};
-    let bodyScheduleInsertAfter = -1; // 0-based body page index after which to insert PDFs
-    {
-      let bodyPagesSoFar = 0;
-      for (const slug of sectionSlugs) {
-        pageMap[slug] = currentPage;
-        currentPage += pageCounts[slug];
-        bodyPagesSoFar += pageCounts[slug];
-        if (slug === "project_schedule" && totalSchedulePdfPages > 0) {
-          bodyScheduleInsertAfter = bodyPagesSoFar - 1;
-          currentPage += totalSchedulePdfPages;
-        }
-      }
+    for (const slug of sectionSlugs) {
+      pageMap[slug] = currentPage;
+      currentPage += pageCounts[slug];
     }
 
     // Pass 2: show all sections, inject TOC page numbers, render final PDF
@@ -263,7 +321,7 @@ export async function generateProposalPdf(
     const bodyPdfBuffer = await bodyPage.pdf(bodyPdfOpts);
     await bodyPage.close();
 
-    // 6. Merge PDFs with pdf-lib
+    // 7. Merge PDFs with pdf-lib
     const mergedPdf = await PDFDocument.create();
 
     if (hasCover) {
@@ -278,20 +336,12 @@ export async function generateProposalPdf(
     }
 
     const bodyDoc = await PDFDocument.load(bodyPdfBuffer);
-    const bodyPageCount = bodyDoc.getPageCount();
-    for (let i = 0; i < bodyPageCount; i++) {
-      const [copiedPage] = await mergedPdf.copyPages(bodyDoc, [i]);
-      mergedPdf.addPage(copiedPage);
-
-      // Insert schedule PDF pages right after the project_schedule section
-      if (i === bodyScheduleInsertAfter && schedulePdfDocs.length > 0) {
-        for (const { doc } of schedulePdfDocs) {
-          const schedPages = await mergedPdf.copyPages(doc, doc.getPageIndices());
-          for (const sp of schedPages) {
-            mergedPdf.addPage(sp);
-          }
-        }
-      }
+    const bodyPages = await mergedPdf.copyPages(
+      bodyDoc,
+      bodyDoc.getPageIndices()
+    );
+    for (const page of bodyPages) {
+      mergedPdf.addPage(page);
     }
 
     // Set metadata

@@ -661,12 +661,7 @@ function renderProjectScheduleSection(slug: string, section: {
       )
       .join("");
   } else if (showGantt) {
-    // Check if PDF files exist — they'll be merged at the pdf-lib level
-    const files = (section.content.files as Array<{ type: string }>) || [];
-    const hasPdfFiles = files.some((f) => f.type === "application/pdf");
-    if (!hasPdfFiles) {
-      content += `<div class="tiptap-content"><p>See attached Gantt chart(s).</p></div>`;
-    }
+    content += `<div class="tiptap-content"><p>See attached Gantt chart(s).</p></div>`;
   }
 
   if (showStrategy) {

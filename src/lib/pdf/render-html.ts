@@ -420,7 +420,7 @@ export async function renderBodyHtml(
   const bodySections = enabledSections.filter((s) => s.slug !== "cover_page");
 
   const tocEntries = enabledSections
-    .filter((s) => s.slug !== "cover_page" && s.slug !== "table_of_contents")
+    .filter((s) => s.slug !== "cover_page" && s.slug !== "table_of_contents" && s.slug !== "interview_panel")
     .map((s) => ({ slug: s.slug, title: s.displayName }));
 
   const sectionHtmls: string[] = [];
@@ -529,7 +529,7 @@ function renderSection(
     case "reference_check":
       return renderReferenceSection(section.slug, data.references);
     case "interview_panel":
-      return renderInterviewPanelSection(section.slug, data.personnel);
+      return null; // Same content as Personnel Qualifications — skip to avoid duplication
     case "project_cost":
       return renderProjectCostSection(section.slug, data.costData);
     default:

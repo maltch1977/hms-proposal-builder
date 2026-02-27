@@ -65,7 +65,9 @@ export function KeyPersonnelPdf({ personnel, orgChartImageUrl }: KeyPersonnelPdf
       )}
 
       {/* Personnel Bios */}
-      <Text style={baseStyles.sectionSubtitle}>Personnel Qualifications</Text>
+      <View minPresenceAhead={0.25}>
+        <Text style={baseStyles.sectionSubtitle}>Personnel Qualifications</Text>
+      </View>
       {personnel.map((person, idx) => {
         const stats = [
           person.yearsIndustry != null && `Yrs Industry: ${person.yearsIndustry}`,
@@ -76,6 +78,7 @@ export function KeyPersonnelPdf({ personnel, orgChartImageUrl }: KeyPersonnelPdf
         return (
           <View
             key={idx}
+            minPresenceAhead={0.1}
             style={{
               marginBottom: 12,
               paddingBottom: 10,

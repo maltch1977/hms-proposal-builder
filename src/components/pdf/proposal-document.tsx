@@ -145,10 +145,13 @@ export function ProposalDocument({ data }: ProposalDocumentProps) {
                   <HtmlContent html={(section.content.narrative as string) || ""} />
                   {data.caseStudies.length > 0 && (
                     <View style={{ marginTop: 12 }}>
-                      <Text style={baseStyles.sectionSubtitle}>Case Studies</Text>
+                      <View minPresenceAhead={0.2}>
+                        <Text style={baseStyles.sectionSubtitle}>Case Studies</Text>
+                      </View>
                       {data.caseStudies.map((cs, idx) => (
                         <View
                           key={idx}
+                          minPresenceAhead={0.1}
                           style={{
                             marginBottom: 10,
                             padding: 8,

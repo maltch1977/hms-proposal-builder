@@ -41,19 +41,22 @@ export function ExecutionStrategyPdf({
 
       {phases && phases.length > 0 && (
         <View style={{ marginBottom: 12 }}>
-          <Text
-            style={{
-              fontSize: 11,
-              fontFamily: "Helvetica-Bold",
-              color: COLORS.navy,
-              marginBottom: 6,
-            }}
-          >
-            Project Phases
-          </Text>
+          <View minPresenceAhead={0.15}>
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: "Helvetica-Bold",
+                color: COLORS.navy,
+                marginBottom: 6,
+              }}
+            >
+              Project Phases
+            </Text>
+          </View>
           {phases.map((phase, idx) => (
             <View
               key={idx}
+              minPresenceAhead={0.1}
               style={{
                 marginBottom: 8,
                 padding: 8,
@@ -90,7 +93,7 @@ export function ExecutionStrategyPdf({
       )}
 
       {criticalPath && criticalPath.length > 0 && (
-        <View>
+        <View minPresenceAhead={0.15}>
           <Text
             style={{
               fontSize: 11,

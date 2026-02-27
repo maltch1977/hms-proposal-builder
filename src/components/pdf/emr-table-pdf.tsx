@@ -16,7 +16,7 @@ export function EmrTablePdf({ ratings }: EmrTablePdfProps) {
   const sorted = [...ratings].sort((a, b) => a.year - b.year);
 
   return (
-    <View style={{ marginTop: 12 }}>
+    <View wrap={false} style={{ marginTop: 12 }}>
       <Text style={baseStyles.sectionSubtitle}>
         Experience Modification Rating (EMR)
       </Text>

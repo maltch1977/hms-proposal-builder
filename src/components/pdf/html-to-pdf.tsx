@@ -88,33 +88,35 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
       );
     case "h2":
       return (
-        <Text
-          key={key}
-          style={{
-            fontSize: 13,
-            fontFamily: "Helvetica-Bold",
-            color: COLORS.navy,
-            marginTop: 10,
-            marginBottom: 6,
-          }}
-        >
-          {children}
-        </Text>
+        <View key={key} minPresenceAhead={0.15}>
+          <Text
+            style={{
+              fontSize: 13,
+              fontFamily: "Helvetica-Bold",
+              color: COLORS.navy,
+              marginTop: 10,
+              marginBottom: 6,
+            }}
+          >
+            {children}
+          </Text>
+        </View>
       );
     case "h3":
       return (
-        <Text
-          key={key}
-          style={{
-            fontSize: 11,
-            fontFamily: "Helvetica-Bold",
-            color: COLORS.navy,
-            marginTop: 8,
-            marginBottom: 4,
-          }}
-        >
-          {children}
-        </Text>
+        <View key={key} minPresenceAhead={0.12}>
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: "Helvetica-Bold",
+              color: COLORS.navy,
+              marginTop: 8,
+              marginBottom: 4,
+            }}
+          >
+            {children}
+          </Text>
+        </View>
       );
     case "strong":
     case "b":

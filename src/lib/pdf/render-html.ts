@@ -621,18 +621,17 @@ function renderKeyPersonnelSection(
   const showOrgChart =
     (section.content.org_chart_mode || "upload") === "upload";
 
-  let content = "";
-
+  // Page 1: Organization Chart
+  let orgContent = "";
   if (showOrgChart && orgChartBase64) {
-    content += `
+    orgContent += `
       <div class="org-chart-image">
         <img src="${orgChartBase64}" />
       </div>
     `;
   } else {
-    // Text fallback
-    content += `<div style="margin-bottom: 16px;">`;
-    content += personnel
+    orgContent += `<div style="margin-bottom: 16px;">`;
+    orgContent += personnel
       .map(
         (p, idx) => `
         <div style="display: flex; align-items: center; margin-bottom: 4px; padding-left: ${idx === 0 ? 0 : 16}px;">
@@ -646,18 +645,23 @@ function renderKeyPersonnelSection(
         </div>`
       )
       .join("");
-    content += `</div>`;
+    orgContent += `</div>`;
   }
 
-  // Personnel qualifications on a separate page
-  content += `<div style="break-before: page;">${renderPersonnelCards(personnel)}</div>`;
+  // Page 2: Personnel Qualifications (separate banner via sectionWrap-style markup)
+  const qualContent = `
+    <div style="break-before: page;">
+      <div class="section-title-bar">Personnel Qualifications</div>
+      ${renderPersonnelCards(personnel)}
+    </div>
+  `;
 
-  return sectionWrap(slug, "Organization Chart & Personnel Qualifications", content);
+  return sectionWrap(slug, "Organization Chart", orgContent + qualContent);
 }
 
 // ─── Personnel Cards (shared by Key Personnel & Interview Panel) ──
 function renderPersonnelCards(personnel: PersonnelEntry[]): string {
-  let html = '<div class="subsection-title">Personnel Qualifications</div>';
+  let html = "";
 
   html += personnel
     .map((person) => {

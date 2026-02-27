@@ -49,21 +49,21 @@ export async function GET(
     .order("order_index");
 
   // Fetch team members with personnel
-  const { data: teamMembers } = await supabase
+  const { data: teamMembers, error: teamError } = await supabase
     .from("proposal_team_members")
     .select("*, personnel:personnel(*)")
     .eq("proposal_id", proposalId)
     .order("order_index");
 
   // Fetch case studies with projects
-  const { data: caseStudies } = await supabase
+  const { data: caseStudies, error: caseStudyError } = await supabase
     .from("proposal_case_studies")
     .select("*, project:past_projects(*)")
     .eq("proposal_id", proposalId)
     .order("order_index");
 
   // Fetch references
-  const { data: proposalRefs } = await supabase
+  const { data: proposalRefs, error: refError } = await supabase
     .from("proposal_references")
     .select("*, reference:references(*)")
     .eq("proposal_id", proposalId)
@@ -209,20 +209,24 @@ export async function GET(
   if (debug === "1") {
     return NextResponse.json({
       _debug: true,
+      proposalId,
+      queryErrors: {
+        teamMembers: teamError?.message || null,
+        caseStudies: caseStudyError?.message || null,
+        references: refError?.message || null,
+      },
+      rawQueryResults: {
+        caseStudiesRaw: caseStudies,
+        teamMembersRaw: teamMembers?.length ?? null,
+        refsRaw: proposalRefs?.length ?? null,
+      },
       sectionCount: docData.sections.length,
       enabledSections: docData.sections.filter(s => s.isEnabled).map(s => s.slug),
       caseStudyCount: docData.caseStudies.length,
-      caseStudies: docData.caseStudies.map(cs => ({
-        projectName: cs.projectName,
-        hasNarrative: !!cs.narrative,
-        hasPhoto: !!cs.photoUrl,
-      })),
       personnelCount: docData.personnel.length,
       referenceCount: docData.references.length,
       costRowCount: docData.costData.rows.length,
       emrRatingCount: docData.emrRatings.length,
-      firmBackgroundEnabled: docData.sections.some(s => s.slug === "firm_background" && s.isEnabled),
-      firmBackgroundContent: docData.sections.find(s => s.slug === "firm_background")?.content,
     });
   }
 

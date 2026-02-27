@@ -407,7 +407,7 @@ export async function renderCoverHtml(
 
 export async function renderBodyHtml(
   data: ProposalDocumentData,
-  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[]; scheduleFileImages: string[] }
+  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] }
 ): Promise<string> {
   const fontBase64 = await getFontBase64();
   const enabledSections = data.sections.filter((s) => s.isEnabled);
@@ -424,21 +424,30 @@ export async function renderBodyHtml(
     if (html) sectionHtmls.push(html);
   }
 
-  const bodyCSS = `
-    @page {
-      size: letter;
-      margin: 72pt 54pt 60pt 54pt;
-    }
-  `;
+  return wrapHtml(sectionHtmls.join("\n"), fontBase64);
+}
 
-  return wrapHtml(sectionHtmls.join("\n"), fontBase64, bodyCSS);
+// ─── Schedule Landscape HTML (rendered as separate PDF) ──────
+export async function renderScheduleLandscapeHtml(
+  scheduleFileImages: string[]
+): Promise<string | null> {
+  if (scheduleFileImages.length === 0) return null;
+  const fontBase64 = await getFontBase64();
+  const body = scheduleFileImages
+    .map(
+      (img, i) => `<div style="${i > 0 ? "break-before: page;" : ""} text-align: center;">
+        <img src="${img}" style="max-width: 100%; height: auto;" />
+      </div>`
+    )
+    .join("");
+  return wrapHtml(body, fontBase64);
 }
 
 // ─── Section Router ──────────────────────────────────────────
 function renderSection(
   section: { slug: string; displayName: string; content: Record<string, unknown> },
   data: ProposalDocumentData,
-  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[]; scheduleFileImages: string[] },
+  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] },
   tocEntries: { slug: string; title: string }[],
   caseStudyPhotos: string[]
 ): string | null {
@@ -456,7 +465,7 @@ function renderSection(
     case "key_personnel":
       return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64);
     case "project_schedule":
-      return renderProjectScheduleSection(section.slug, section, images.scheduleFileImages);
+      return renderProjectScheduleSection(section.slug, section);
     case "site_logistics":
       return renderSiteLogisticsSection(section.slug, section, data.emrRatings);
     case "qaqc_commissioning":
@@ -630,7 +639,7 @@ function renderPersonnelCards(personnel: PersonnelEntry[]): string {
 // ─── Project Schedule ────────────────────────────────────────
 function renderProjectScheduleSection(slug: string, section: {
   content: Record<string, unknown>;
-}, scheduleFileImages: string[]): string {
+}): string {
   const outputMode = (section.content.output_mode as string) || "raw";
   const strategy = section.content.execution_strategy as
     | {
@@ -646,22 +655,28 @@ function renderProjectScheduleSection(slug: string, section: {
       }
     | undefined;
 
-  const showGantt = outputMode === "raw" || outputMode === "both";
   const showStrategy =
     (outputMode === "ai_only" || outputMode === "both") && strategy;
 
   let content = "";
 
-  if (showGantt && scheduleFileImages.length > 0) {
-    content += scheduleFileImages
-      .map(
-        (img) => `<div style="margin-bottom: 12px; text-align: center;">
-          <img src="${img}" style="max-width: 100%; height: auto;" />
-        </div>`
-      )
-      .join("");
-  } else if (showGantt) {
-    content += `<div class="tiptap-content"><p>See attached Gantt chart(s).</p></div>`;
+  // Requirement Q&A responses (the text fields from the UI)
+  const requirementQA = (section.content.requirement_qa || []) as Array<{
+    question: string;
+    answer: string;
+  }>;
+  if (requirementQA.length > 0) {
+    for (const qa of requirementQA) {
+      content += `
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 9.5pt; font-weight: 700; color: ${C.navy}; margin-bottom: 4px;">
+            ${esc(qa.question)}
+          </div>
+          <div style="font-size: 10pt; line-height: 1.6; color: #333333;">
+            ${esc(qa.answer)}
+          </div>
+        </div>`;
+    }
   }
 
   if (showStrategy) {
@@ -712,6 +727,11 @@ function renderProjectScheduleSection(slug: string, section: {
         </ul>
       `;
     }
+  }
+
+  // If no content at all, show placeholder
+  if (!content.trim()) {
+    content = `<div class="tiptap-content"><p style="color: ${C.darkGray}; font-style: italic;">See attached schedule.</p></div>`;
   }
 
   return sectionWrap(slug, "Project Schedule", content);

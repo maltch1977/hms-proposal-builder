@@ -107,6 +107,14 @@ export async function GET(
     }));
   }
 
+  // Extract RFP requirements from proposal metadata for rendering Q&A in structured sections
+  const proposalMeta = (proposal.metadata || {}) as Record<string, unknown>;
+  const rfpRequirements = (proposalMeta.rfp_requirements || []) as Array<{
+    id: string;
+    description: string;
+    section_slug: string;
+  }>;
+
   // Assemble document data — keep image URLs as-is, images.ts resolves to base64 later
   const docData: ProposalDocumentData = {
     title: proposal.title,
@@ -135,6 +143,16 @@ export async function GET(
             content.org_chart_image = "/images/hms_org_chart.png";
           }
         }
+      }
+
+      // Enrich with requirement Q&A pairs for structured sections
+      const responses = (content.requirement_responses || {}) as Record<string, string>;
+      const sectionReqs = rfpRequirements.filter((r) => r.section_slug === slug);
+      const requirementQA = sectionReqs
+        .map((r) => ({ question: r.description, answer: responses[r.id] || "" }))
+        .filter((qa) => qa.answer.trim().length > 0);
+      if (requirementQA.length > 0) {
+        content.requirement_qa = requirementQA;
       }
 
       return {
@@ -259,6 +277,13 @@ export async function GET(
         }
         return { count: files.length, files: fileDetails };
       })(),
+      requirementQA: docData.sections
+        .filter(s => (s.content.requirement_qa as unknown[])?.length > 0)
+        .map(s => ({
+          slug: s.slug,
+          qa: s.content.requirement_qa,
+        })),
+      rfpRequirementsCount: rfpRequirements.length,
     });
   }
 

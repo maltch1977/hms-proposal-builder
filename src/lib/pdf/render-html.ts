@@ -249,7 +249,6 @@ const sharedCSS = `
   }
   .org-chart-image img {
     max-width: 100%;
-    max-height: 300px;
     object-fit: contain;
   }
 
@@ -560,7 +559,7 @@ function renderKeyPersonnelSection(
   const showOrgChart =
     (section.content.org_chart_mode || "upload") === "upload";
 
-  let content = '<div class="subsection-title">Organization Chart</div>';
+  let content = "";
 
   if (showOrgChart && orgChartBase64) {
     content += `
@@ -588,8 +587,10 @@ function renderKeyPersonnelSection(
     content += `</div>`;
   }
 
-  content += renderPersonnelCards(personnel);
-  return sectionWrap(slug, "Key Personnel & Org Chart", content);
+  // Personnel qualifications on a separate page
+  content += `<div style="break-before: page;">${renderPersonnelCards(personnel)}</div>`;
+
+  return sectionWrap(slug, "Organization Chart & Personnel Qualifications", content);
 }
 
 // ─── Personnel Cards (shared by Key Personnel & Interview Panel) ──

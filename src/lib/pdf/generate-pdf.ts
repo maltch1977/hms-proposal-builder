@@ -174,10 +174,10 @@ export async function generateProposalPdf(
         data.footerText || data.companyName || "HMS Commercial Service, Inc."
       ),
       margin: {
-        top: "72pt",
-        right: "54pt",
-        bottom: "60pt",
-        left: "54pt",
+        top: "1in",
+        right: "0.75in",
+        bottom: "0.833in",
+        left: "0.75in",
       },
     });
     await bodyPage.close();

@@ -126,6 +126,12 @@ const sharedCSS = `
     border-top: 1px solid ${C.mediumGray};
     margin: 12px 0;
   }
+  .tiptap-content mark,
+  .tiptap-content [data-color],
+  .tiptap-content [style*="background-color"] {
+    background-color: transparent !important;
+    background: none !important;
+  }
 
   /* Tables */
   .data-table {

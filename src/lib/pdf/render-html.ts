@@ -408,7 +408,7 @@ export async function renderCoverHtml(
 
 export async function renderBodyHtml(
   data: ProposalDocumentData,
-  images: { logoBase64: string; orgChartBase64: string }
+  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] }
 ): Promise<string> {
   const fontBase64 = await getFontBase64();
   const enabledSections = data.sections.filter((s) => s.isEnabled);
@@ -421,7 +421,7 @@ export async function renderBodyHtml(
   const sectionHtmls: string[] = [];
 
   for (const section of bodySections) {
-    const html = renderSection(section, data, images, tocEntries);
+    const html = renderSection(section, data, images, tocEntries, images.caseStudyPhotos);
     if (html) sectionHtmls.push(html);
   }
 
@@ -439,8 +439,9 @@ export async function renderBodyHtml(
 function renderSection(
   section: { slug: string; displayName: string; content: Record<string, unknown> },
   data: ProposalDocumentData,
-  images: { logoBase64: string; orgChartBase64: string },
-  tocEntries: { slug: string; title: string }[]
+  images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] },
+  tocEntries: { slug: string; title: string }[],
+  caseStudyPhotos: string[]
 ): string | null {
   switch (section.slug) {
     case "table_of_contents":
@@ -452,7 +453,7 @@ function renderSection(
     case "closeout":
       return renderHtmlContentSection(section.slug, "Closeout", (section.content.body as string) || "");
     case "firm_background":
-      return renderFirmBackgroundSection(section.slug, section, data.caseStudies);
+      return renderFirmBackgroundSection(section.slug, section, data.caseStudies, caseStudyPhotos);
     case "key_personnel":
       return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64);
     case "project_schedule":
@@ -514,7 +515,8 @@ function renderHtmlContentSection(slug: string, title: string, html: string): st
 function renderFirmBackgroundSection(
   slug: string,
   section: { content: Record<string, unknown> },
-  caseStudies: CaseStudyEntry[]
+  caseStudies: CaseStudyEntry[],
+  caseStudyPhotos: string[]
 ): string {
   const narrative = (section.content.narrative as string) || "";
   let content = `<div class="tiptap-content">${narrative}</div>`;
@@ -525,14 +527,22 @@ function renderFirmBackgroundSection(
         <div class="subsection-title">Case Studies</div>
         ${caseStudies
           .map(
-            (cs) => `
-          <div class="case-study-card">
-            <div class="cs-name">${esc(cs.projectName)}</div>
-            <div class="cs-meta">
-              ${esc(cs.clientName)} &mdash; ${esc(cs.buildingType)}${cs.squareFootage ? ` &mdash; ${cs.squareFootage.toLocaleString()} SF` : ""}
+            (cs, idx) => {
+              const photo = caseStudyPhotos[idx] || "";
+              return `
+          <div class="case-study-card" style="overflow: hidden;">
+            <div class="cs-name" style="text-align: center; font-size: 11pt; margin-bottom: 6px; text-decoration: underline;">
+              ${esc(cs.projectName)}
             </div>
-            ${cs.narrative ? `<div class="cs-narrative">${esc(cs.narrative)}</div>` : ""}
-          </div>`
+            <div style="margin-bottom: 4px;">
+              ${photo ? `<img src="${photo}" style="float: right; width: 200px; height: 140px; object-fit: cover; margin: 0 0 8px 12px; border-radius: 2px;" />` : ""}
+              <div class="cs-meta" style="margin-bottom: 4px;">
+                ${esc(cs.clientName)} &mdash; ${esc(cs.buildingType)}${cs.squareFootage ? ` &mdash; ${cs.squareFootage.toLocaleString()} SF` : ""}
+              </div>
+              ${cs.narrative ? `<div class="cs-narrative">${esc(cs.narrative)}</div>` : ""}
+            </div>
+          </div>`;
+            }
           )
           .join("")}
       </div>

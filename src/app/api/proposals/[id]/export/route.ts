@@ -159,12 +159,23 @@ export async function GET(
     })(),
     caseStudies: (caseStudies || []).map((cs) => {
       const proj = (cs as unknown as { project: Tables<"past_projects"> }).project;
+      // Extract first photo URL from photos JSON array
+      const photos = proj.photos as unknown[];
+      let photoUrl: string | undefined;
+      if (Array.isArray(photos) && photos.length > 0) {
+        const first = photos[0];
+        if (typeof first === "string") photoUrl = first;
+        else if (first && typeof first === "object" && "url" in first)
+          photoUrl = (first as { url: string }).url;
+      }
+
       return {
         projectName: proj.project_name,
         clientName: proj.client_name,
         buildingType: proj.building_type,
         squareFootage: proj.square_footage,
         narrative: proj.narrative,
+        photoUrl,
       };
     }),
     references: (proposalRefs || []).map((pr) => {

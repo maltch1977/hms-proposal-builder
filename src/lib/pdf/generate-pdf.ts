@@ -130,6 +130,7 @@ export async function generateProposalPdf(
     renderBodyHtml(data, {
       logoBase64: images.logoBase64,
       orgChartBase64: images.orgChartBase64,
+      caseStudyPhotos: images.caseStudyPhotos,
     }),
   ]);
 

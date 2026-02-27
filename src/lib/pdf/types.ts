@@ -26,6 +26,7 @@ export interface CaseStudyEntry {
   buildingType: string;
   squareFootage: number | null;
   narrative: string | null;
+  photoUrl?: string;
 }
 
 export interface ReferenceEntry {

@@ -56,10 +56,12 @@ export async function resolveAllImages(data: {
   logoUrl?: string;
   coverPhotoUrl?: string;
   sections: Array<{ slug: string; content: Record<string, unknown> }>;
+  caseStudies: Array<{ photoUrl?: string }>;
 }): Promise<{
   logoBase64: string;
   coverPhotoBase64: string;
   orgChartBase64: string;
+  caseStudyPhotos: string[];
 }> {
   // Find org chart URL from key_personnel section
   const kpSection = data.sections.find((s) => s.slug === "key_personnel");
@@ -69,11 +71,15 @@ export async function resolveAllImages(data: {
       ? (kpSection.content.org_chart_image as string | undefined) || ""
       : "";
 
-  const [logoBase64, coverPhotoBase64, orgChartBase64] = await Promise.all([
-    resolveImageToBase64(data.logoUrl || ""),
-    resolveImageToBase64(data.coverPhotoUrl || ""),
-    resolveImageToBase64(orgChartUrl),
-  ]);
+  const [logoBase64, coverPhotoBase64, orgChartBase64, ...caseStudyPhotos] =
+    await Promise.all([
+      resolveImageToBase64(data.logoUrl || ""),
+      resolveImageToBase64(data.coverPhotoUrl || ""),
+      resolveImageToBase64(orgChartUrl),
+      ...data.caseStudies.map((cs) =>
+        resolveImageToBase64(cs.photoUrl || "")
+      ),
+    ]);
 
-  return { logoBase64, coverPhotoBase64, orgChartBase64 };
+  return { logoBase64, coverPhotoBase64, orgChartBase64, caseStudyPhotos };
 }

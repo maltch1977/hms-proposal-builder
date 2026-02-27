@@ -14,6 +14,13 @@ const nextConfig: NextConfig = {
     root: import.meta.dirname,
   },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
+  // Include public assets in serverless function bundle for PDF generation
+  outputFileTracingIncludes: {
+    "/api/proposals/[id]/export": [
+      "./public/fonts/**/*",
+      "./public/images/**/*",
+    ],
+  },
   // Keep webpack canvas alias while @react-pdf/renderer is still installed
   webpack: (config) => {
     config.resolve.alias.canvas = false;

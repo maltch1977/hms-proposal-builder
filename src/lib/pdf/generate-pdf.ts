@@ -6,14 +6,27 @@ import { renderCoverHtml, renderBodyHtml } from "./render-html";
 
 // ─── Chrome executable resolution ────────────────────────────
 
-async function getChromePath(): Promise<string> {
+const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+async function getChromiumConfig(): Promise<{
+  executablePath: string;
+  args: string[];
+}> {
   // Explicit env var takes priority
-  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
+  if (process.env.CHROME_PATH) {
+    return {
+      executablePath: process.env.CHROME_PATH,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+    };
+  }
 
   // Production (Vercel serverless): use @sparticuz/chromium
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    const chromium = await import("@sparticuz/chromium");
-    return await chromium.default.executablePath();
+  if (isServerless) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    return {
+      executablePath: await chromium.executablePath(),
+      args: chromium.args,
+    };
   }
 
   // Local dev: system Chrome
@@ -24,11 +37,14 @@ async function getChromePath(): Promise<string> {
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   ];
 
+  const { access } = await import("fs/promises");
   for (const p of candidates) {
     try {
-      const { access } = await import("fs/promises");
       await access(p);
-      return p;
+      return {
+        executablePath: p,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+      };
     } catch {
       continue;
     }
@@ -37,19 +53,6 @@ async function getChromePath(): Promise<string> {
   throw new Error(
     "Chrome not found. Set CHROME_PATH env var or install Google Chrome."
   );
-}
-
-async function getLaunchArgs(): Promise<string[]> {
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    const chromium = await import("@sparticuz/chromium");
-    return chromium.default.args;
-  }
-  return [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-  ];
 }
 
 // ─── Header / Footer Templates ───────────────────────────────
@@ -63,7 +66,7 @@ function headerTemplate(
   return `
     <div style="
       width: 100%;
-      font-family: 'Inter', -apple-system, sans-serif;
+      font-family: -apple-system, sans-serif;
       font-size: 8px;
       padding: 0 54px;
       display: flex;
@@ -92,7 +95,7 @@ function footerTemplate(companyName: string): string {
   return `
     <div style="
       width: 100%;
-      font-family: 'Inter', -apple-system, sans-serif;
+      font-family: -apple-system, sans-serif;
       font-size: 7px;
       padding: 0 54px;
       display: flex;
@@ -129,15 +132,13 @@ export async function generateProposalPdf(
   ]);
 
   // 3. Launch Puppeteer
-  const [executablePath, args] = await Promise.all([
-    getChromePath(),
-    getLaunchArgs(),
-  ]);
+  const { executablePath, args } = await getChromiumConfig();
 
   const browser = await puppeteer.launch({
     executablePath,
     args,
     headless: true,
+    defaultViewport: { width: 816, height: 1056 }, // Letter size at 96dpi
   });
 
   try {

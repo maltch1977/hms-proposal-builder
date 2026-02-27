@@ -205,9 +205,11 @@ export async function GET(
       },
     });
   } catch (err) {
-    console.error("PDF generation error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("PDF generation error:", message, stack);
     return NextResponse.json(
-      { error: "Failed to generate PDF" },
+      { error: "Failed to generate PDF", detail: message },
       { status: 500 }
     );
   }

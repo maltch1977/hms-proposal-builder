@@ -154,14 +154,13 @@ export async function generateProposalPdf(
     });
     await coverPage.close();
 
-    // 5. Render body PDF (with margins, header/footer)
+    // 5. Render body PDF (two-pass: measure page counts, then render with TOC page numbers)
     const hasCover = data.sections.some(
       (s) => s.slug === "cover_page" && s.isEnabled
     );
-    const bodyPage = await browser.newPage();
-    await bodyPage.setContent(bodyHtml, { waitUntil: "networkidle0" });
-    const bodyPdfBuffer = await bodyPage.pdf({
-      format: "Letter",
+
+    const bodyPdfOpts = {
+      format: "Letter" as const,
       printBackground: true,
       displayHeaderFooter: true,
       headerTemplate: headerTemplate(
@@ -179,7 +178,65 @@ export async function generateProposalPdf(
         bottom: "0.833in",
         left: "0.75in",
       },
+    };
+
+    const bodyPage = await browser.newPage();
+    await bodyPage.setContent(bodyHtml, { waitUntil: "networkidle0" });
+
+    // Pass 1: measure page count per section by isolating each one
+    const sectionSlugs: string[] = await bodyPage.evaluate(() => {
+      return [...document.querySelectorAll("section.pdf-section")]
+        .map((s) => s.getAttribute("data-slug") || "")
+        .filter(Boolean);
     });
+
+    const pageCounts: Record<string, number> = {};
+    for (const slug of sectionSlugs) {
+      // Hide all sections except current, remove break-before on it
+      await bodyPage.evaluate((currentSlug: string) => {
+        document.querySelectorAll("section.pdf-section").forEach((s) => {
+          const el = s as HTMLElement;
+          if (s.getAttribute("data-slug") === currentSlug) {
+            el.style.display = "";
+            el.style.breakBefore = "auto";
+          } else {
+            el.style.display = "none";
+          }
+        });
+      }, slug);
+
+      const tempPdf = await bodyPage.pdf(bodyPdfOpts);
+      const tempDoc = await PDFDocument.load(tempPdf);
+      pageCounts[slug] = tempDoc.getPageCount();
+    }
+
+    // Calculate cumulative start pages
+    let currentPage = 1;
+    const pageMap: Record<string, number> = {};
+    for (const slug of sectionSlugs) {
+      pageMap[slug] = currentPage;
+      currentPage += pageCounts[slug];
+    }
+
+    // Pass 2: show all sections, inject TOC page numbers, render final PDF
+    await bodyPage.evaluate((map: Record<string, number>) => {
+      // Restore all sections
+      document.querySelectorAll("section.pdf-section").forEach((s) => {
+        const el = s as HTMLElement;
+        el.style.display = "";
+        el.style.breakBefore = "";
+      });
+      // Update TOC entries with real page numbers
+      document.querySelectorAll("[data-toc-slug]").forEach((el) => {
+        const slug = el.getAttribute("data-toc-slug");
+        if (slug && map[slug]) {
+          const span = el.querySelector(".toc-page-num");
+          if (span) span.textContent = String(map[slug]);
+        }
+      });
+    }, pageMap);
+
+    const bodyPdfBuffer = await bodyPage.pdf(bodyPdfOpts);
     await bodyPage.close();
 
     // 6. Merge PDFs with pdf-lib

@@ -416,7 +416,7 @@ export async function renderBodyHtml(
 
   const tocEntries = enabledSections
     .filter((s) => s.slug !== "cover_page" && s.slug !== "table_of_contents")
-    .map((s) => s.displayName);
+    .map((s) => ({ slug: s.slug, title: s.displayName }));
 
   const sectionHtmls: string[] = [];
 
@@ -440,59 +440,60 @@ function renderSection(
   section: { slug: string; displayName: string; content: Record<string, unknown> },
   data: ProposalDocumentData,
   images: { logoBase64: string; orgChartBase64: string },
-  tocEntries: string[]
+  tocEntries: { slug: string; title: string }[]
 ): string | null {
   switch (section.slug) {
     case "table_of_contents":
-      return renderTocSection(tocEntries);
+      return renderTocSection(section.slug, tocEntries);
     case "introduction":
-      return renderHtmlContentSection("Introduction", (section.content.body as string) || "");
+      return renderHtmlContentSection(section.slug, "Introduction", (section.content.body as string) || "");
     case "executive_summary":
-      return renderHtmlContentSection("Executive Summary", (section.content.body as string) || "");
+      return renderHtmlContentSection(section.slug, "Executive Summary", (section.content.body as string) || "");
     case "closeout":
-      return renderHtmlContentSection("Closeout", (section.content.body as string) || "");
+      return renderHtmlContentSection(section.slug, "Closeout", (section.content.body as string) || "");
     case "firm_background":
-      return renderFirmBackgroundSection(section, data.caseStudies);
+      return renderFirmBackgroundSection(section.slug, section, data.caseStudies);
     case "key_personnel":
-      return renderKeyPersonnelSection(section, data.personnel, images.orgChartBase64);
+      return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64);
     case "project_schedule":
-      return renderProjectScheduleSection(section);
+      return renderProjectScheduleSection(section.slug, section);
     case "site_logistics":
-      return renderSiteLogisticsSection(section, data.emrRatings);
+      return renderSiteLogisticsSection(section.slug, section, data.emrRatings);
     case "qaqc_commissioning":
-      return renderQaqcSection(section);
+      return renderQaqcSection(section.slug, section);
     case "reference_check":
-      return renderReferenceSection(data.references);
+      return renderReferenceSection(section.slug, data.references);
     case "interview_panel":
-      return renderInterviewPanelSection(data.personnel);
+      return renderInterviewPanelSection(section.slug, data.personnel);
     case "project_cost":
-      return renderProjectCostSection(data.costData);
+      return renderProjectCostSection(section.slug, data.costData);
     default:
       return null;
   }
 }
 
 // ─── Section Wrapper ─────────────────────────────────────────
-function sectionWrap(title: string, content: string, isFirst = false): string {
-  return `<section class="pdf-section"${isFirst ? ' style="break-before:auto"' : ""}>
+function sectionWrap(slug: string, title: string, content: string): string {
+  return `<section class="pdf-section" data-slug="${slug}">
     <div class="section-title-bar">${esc(title)}</div>
     ${content}
   </section>`;
 }
 
 // ─── Table of Contents ───────────────────────────────────────
-function renderTocSection(entries: string[]): string {
+function renderTocSection(slug: string, entries: { slug: string; title: string }[]): string {
   const rows = entries
     .map(
-      (title) => `
-      <div style="display: flex; align-items: baseline; margin-bottom: 8px;">
-        <span style="flex: 1; font-size: 10pt; color: ${C.bodyText};">${esc(title)}</span>
-        <span style="width: 30px; text-align: right; font-size: 10pt; color: ${C.darkGray};">--</span>
+      (entry) => `
+      <div style="display: flex; align-items: baseline; margin-bottom: 8px;" data-toc-slug="${entry.slug}">
+        <span style="flex: 1; font-size: 10pt; color: ${C.bodyText};">${esc(entry.title)}</span>
+        <span class="toc-page-num" style="width: 30px; text-align: right; font-size: 10pt; color: ${C.darkGray};">--</span>
       </div>`
     )
     .join("");
 
   return sectionWrap(
+    slug,
     "Table of Contents",
     `
     <div style="font-size: 10pt; font-weight: 700; color: ${C.navy}; letter-spacing: 2px; margin-bottom: 16px;">
@@ -505,12 +506,13 @@ function renderTocSection(entries: string[]): string {
 }
 
 // ─── HTML Content Section (Introduction, Executive Summary, Closeout) ──
-function renderHtmlContentSection(title: string, html: string): string {
-  return sectionWrap(title, `<div class="tiptap-content">${html}</div>`);
+function renderHtmlContentSection(slug: string, title: string, html: string): string {
+  return sectionWrap(slug, title, `<div class="tiptap-content">${html}</div>`);
 }
 
 // ─── Firm Background ─────────────────────────────────────────
 function renderFirmBackgroundSection(
+  slug: string,
   section: { content: Record<string, unknown> },
   caseStudies: CaseStudyEntry[]
 ): string {
@@ -537,11 +539,12 @@ function renderFirmBackgroundSection(
     `;
   }
 
-  return sectionWrap("Firm Background & Experience", content);
+  return sectionWrap(slug, "Firm Background & Experience", content);
 }
 
 // ─── Key Personnel ───────────────────────────────────────────
 function renderKeyPersonnelSection(
+  slug: string,
   section: { content: Record<string, unknown> },
   personnel: PersonnelEntry[],
   orgChartBase64: string
@@ -578,7 +581,7 @@ function renderKeyPersonnelSection(
   }
 
   content += renderPersonnelCards(personnel);
-  return sectionWrap("Key Personnel & Org Chart", content);
+  return sectionWrap(slug, "Key Personnel & Org Chart", content);
 }
 
 // ─── Personnel Cards (shared by Key Personnel & Interview Panel) ──
@@ -616,7 +619,7 @@ function renderPersonnelCards(personnel: PersonnelEntry[]): string {
 }
 
 // ─── Project Schedule ────────────────────────────────────────
-function renderProjectScheduleSection(section: {
+function renderProjectScheduleSection(slug: string, section: {
   content: Record<string, unknown>;
 }): string {
   const outputMode = (section.content.output_mode as string) || "raw";
@@ -694,11 +697,12 @@ function renderProjectScheduleSection(section: {
     }
   }
 
-  return sectionWrap("Project Schedule", content);
+  return sectionWrap(slug, "Project Schedule", content);
 }
 
 // ─── Site Logistics ──────────────────────────────────────────
 function renderSiteLogisticsSection(
+  slug: string,
   section: { content: Record<string, unknown> },
   emrRatings: EmrEntry[]
 ): string {
@@ -720,11 +724,11 @@ function renderSiteLogisticsSection(
     `;
   }
 
-  return sectionWrap("Site Logistics & Safety", content);
+  return sectionWrap(slug, "Site Logistics & Safety", content);
 }
 
 // ─── QA/QC/Commissioning ─────────────────────────────────────
-function renderQaqcSection(section: {
+function renderQaqcSection(slug: string, section: {
   content: Record<string, unknown>;
 }): string {
   const qa = (section.content.quality_assurance as string) || "";
@@ -737,11 +741,11 @@ function renderQaqcSection(section: {
     <div class="tiptap-content">${comm}</div>
   `;
 
-  return sectionWrap("QA/QC/Commissioning", content);
+  return sectionWrap(slug, "QA/QC/Commissioning", content);
 }
 
 // ─── Reference Check ─────────────────────────────────────────
-function renderReferenceSection(references: ReferenceEntry[]): string {
+function renderReferenceSection(slug: string, references: ReferenceEntry[]): string {
   const rows = references
     .map(
       (ref, idx) => `
@@ -772,22 +776,22 @@ function renderReferenceSection(references: ReferenceEntry[]): string {
     </table>
   `;
 
-  return sectionWrap("Reference Check", content);
+  return sectionWrap(slug, "Reference Check", content);
 }
 
 // ─── Interview Panel ─────────────────────────────────────────
-function renderInterviewPanelSection(personnel: PersonnelEntry[]): string {
-  return sectionWrap("Interview Panel", renderPersonnelCards(personnel));
+function renderInterviewPanelSection(slug: string, personnel: PersonnelEntry[]): string {
+  return sectionWrap(slug, "Interview Panel", renderPersonnelCards(personnel));
 }
 
 // ─── Project Cost ────────────────────────────────────────────
-function renderProjectCostSection(costData: {
+function renderProjectCostSection(slug: string, costData: {
   columns: PricingColumn[];
   rows: PricingRow[];
   notes?: string;
 }): string {
   if (costData.columns.length === 0 && costData.rows.length === 0) {
-    return sectionWrap("Project Cost", "");
+    return sectionWrap(slug, "Project Cost", "");
   }
 
   // Compute totals
@@ -855,7 +859,7 @@ function renderProjectCostSection(costData: {
     `;
   }
 
-  return sectionWrap("Project Cost", content);
+  return sectionWrap(slug, "Project Cost", content);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────

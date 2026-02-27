@@ -523,21 +523,21 @@ function renderFirmBackgroundSection(
 
   if (caseStudies.length > 0) {
     content += `
-      <div class="mt-3">
-        <div class="subsection-title">Case Studies</div>
+      <div style="margin-top: 8px;">
+        <div class="subsection-title" style="margin-bottom: 4px;">Case Studies</div>
         ${caseStudies
           .map(
             (cs, idx) => {
               const photo = caseStudyPhotos[idx] || "";
               return `
-          <div class="case-study-card" style="overflow: hidden; margin-bottom: 6px; padding: 6px 8px;">
-            <div class="cs-name" style="text-align: center; font-size: 10pt; margin-bottom: 2px; text-decoration: underline;">
+          <div class="case-study-card" style="overflow: hidden; margin-bottom: 3px; padding: 4px 8px;">
+            <div class="cs-name" style="text-align: center; font-size: 9.5pt; margin-bottom: 1px; text-decoration: underline;">
               ${esc(cs.projectName)}
             </div>
-            ${cs.squareFootage ? `<div style="text-align: center; font-size: 8pt; color: ${C.darkGray}; margin-bottom: 4px;">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
+            ${cs.squareFootage ? `<div style="text-align: center; font-size: 7.5pt; color: ${C.darkGray}; margin-bottom: 2px;">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
             <div>
-              ${photo ? `<img src="${photo}" style="float: right; width: 170px; height: 110px; object-fit: cover; margin: 0 0 4px 10px; border-radius: 2px;" />` : ""}
-              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 8pt; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;">${esc(cs.narrative)}</div>` : ""}
+              ${photo ? `<img src="${photo}" style="float: right; width: 150px; height: 90px; object-fit: cover; margin: 0 0 2px 8px; border-radius: 2px;" />` : ""}
+              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 7.5pt; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;">${esc(cs.narrative)}</div>` : ""}
             </div>
           </div>`;
             }

@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { StatusBadge } from "@/components/proposals/status-badge";
 import { AutoSaveIndicator } from "@/components/editor/auto-save-indicator";
-import { ArrowLeft, Eye, Send, Loader2, ClipboardCheck, ChevronDown, CircleCheck, CircleAlert, Circle, History, LogOut } from "lucide-react";
+import { ArrowLeft, Eye, Download, Loader2, ClipboardCheck, ChevronDown, CircleCheck, CircleAlert, Circle, History, LogOut } from "lucide-react";
 import type { Tables } from "@/lib/types/database";
 import type { ProposalStatus } from "@/lib/utils/constants";
 import type { RFPRequirement, RequirementMapping } from "@/lib/ai/types";
@@ -229,9 +229,9 @@ export function EditorTopbar({
           {checkingQuality ? (
             <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Send className="mr-1.5 h-3.5 w-3.5" />
+            <Download className="mr-1.5 h-3.5 w-3.5" />
           )}
-          Save &amp; Send
+          Export PDF
         </Button>
       </div>
     </header>

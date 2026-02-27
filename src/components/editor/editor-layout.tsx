@@ -390,7 +390,8 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     try {
       const res = await fetch(`/api/proposals/${proposalId}/export`);
       if (!res.ok) {
-        toast.error("Failed to generate PDF");
+        const body = await res.json().catch(() => null);
+        toast.error(body?.detail || "Failed to generate PDF");
         return;
       }
       const blob = await res.blob();

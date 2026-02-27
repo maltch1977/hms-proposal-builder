@@ -1,5 +1,5 @@
 import puppeteer, { type Browser } from "puppeteer-core";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { ProposalDocumentData } from "./types";
 import { resolveAllImages, resolveSchedulePdfBuffers } from "./images";
 import { renderCoverHtml, renderBodyHtml, renderScheduleLandscapeHtml } from "./render-html";
@@ -93,10 +93,9 @@ function headerTemplate(
   `;
 }
 
-function footerTemplate(companyName: string, totalPages?: number): string {
-  const totalPart = totalPages != null
-    ? String(totalPages)
-    : `<span class="totalPages"></span>`;
+function footerTemplate(companyName: string): string {
+  // Page numbers are NOT rendered here — they're stamped by pdf-lib after merge
+  // so that landscape schedule pages (spliced in) don't break the numbering.
   return `
     <div style="
       width: 100%;
@@ -111,7 +110,7 @@ function footerTemplate(companyName: string, totalPages?: number): string {
       color: #666666;
     ">
       <span>${companyName || "HMS Commercial Service, Inc."}</span>
-      <span>Page <span class="pageNumber"></span> of ${totalPart}</span>
+      <span></span>
     </div>
   `;
 }
@@ -344,7 +343,7 @@ export async function generateProposalPdf(
       scheduleLandscapePdfBuffer = buf;
     }
 
-    // 11. Body pass 2: inject TOC page numbers, render with correct total
+    // 11. Body pass 2: inject TOC page numbers, render final body PDF
     await bodyPage.evaluate((map: Record<string, number>) => {
       document.querySelectorAll("section.pdf-section").forEach((s) => {
         const el = s as HTMLElement;
@@ -360,13 +359,13 @@ export async function generateProposalPdf(
       });
     }, pageMap);
 
-    const finalFtr = footerTemplate(footerCompanyName, totalPages);
+    const bodyFtr = footerTemplate(footerCompanyName);
     const bodyPdfBuffer = await bodyPage.pdf({
       format: "Letter",
       printBackground: true,
       displayHeaderFooter: true,
       headerTemplate: hdrTpl,
-      footerTemplate: finalFtr,
+      footerTemplate: bodyFtr,
       margin: sharedMargin,
     });
     await bodyPage.close();
@@ -409,6 +408,44 @@ export async function generateProposalPdf(
         );
         for (const sp of schedPages) mergedPdf.addPage(sp);
       }
+    }
+
+    // 13. Stamp correct page numbers on all body pages via pdf-lib
+    //     (Puppeteer footer doesn't include page numbers — landscape splice breaks sequential numbering)
+    const helvetica = await mergedPdf.embedFont(StandardFonts.Helvetica);
+    const pnFontSize = 5.25; // ~7px to match footer font-size
+    const pnColor = rgb(0.4, 0.4, 0.4); // #666666
+    const coverOffset = hasCover ? 1 : 0;
+
+    for (let i = 0; i < bodyPageCount; i++) {
+      // Correct proposal page number accounting for spliced landscape pages
+      const proposalPageNum =
+        scheduleInsertAfterIdx >= 0 && i > scheduleInsertAfterIdx
+          ? i + 1 + scheduleLandscapePageCount
+          : i + 1;
+
+      // Index in the merged PDF (landscape pages shift later body pages)
+      const mergedIdx =
+        coverOffset +
+        i +
+        (scheduleInsertAfterIdx >= 0 && i > scheduleInsertAfterIdx
+          ? scheduleLandscapePageCount
+          : 0);
+
+      const page = mergedPdf.getPage(mergedIdx);
+      const { width } = page.getSize();
+
+      const text = `Page ${proposalPageNum} of ${totalPages}`;
+      const textWidth = helvetica.widthOfTextAtSize(text, pnFontSize);
+
+      // Position in footer area: right-aligned, matching Puppeteer footer padding (54px ≈ 40pt)
+      page.drawText(text, {
+        x: width - 40 - textWidth,
+        y: 28,
+        size: pnFontSize,
+        font: helvetica,
+        color: pnColor,
+      });
     }
 
     mergedPdf.setTitle(data.title);

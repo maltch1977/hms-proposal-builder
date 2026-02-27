@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer-core";
 import { PDFDocument } from "pdf-lib";
 import type { ProposalDocumentData } from "./types";
-import { resolveAllImages } from "./images";
+import { resolveAllImages, resolveSchedulePdfBuffers } from "./images";
 import { renderCoverHtml, renderBodyHtml } from "./render-html";
 
 // ─── Chrome executable resolution ────────────────────────────
@@ -118,8 +118,21 @@ function footerTemplate(companyName: string): string {
 export async function generateProposalPdf(
   data: ProposalDocumentData
 ): Promise<Uint8Array> {
-  // 1. Resolve all images to base64 (parallel)
-  const images = await resolveAllImages(data);
+  // 1. Resolve all images and schedule PDFs in parallel
+  const [images, schedulePdfBuffers] = await Promise.all([
+    resolveAllImages(data),
+    resolveSchedulePdfBuffers(data),
+  ]);
+
+  // Pre-load schedule PDFs and count total pages for TOC offset
+  const schedulePdfDocs: { doc: PDFDocument; pageCount: number }[] = [];
+  let totalSchedulePdfPages = 0;
+  for (const buf of schedulePdfBuffers) {
+    const doc = await PDFDocument.load(buf);
+    const pageCount = doc.getPageCount();
+    schedulePdfDocs.push({ doc, pageCount });
+    totalSchedulePdfPages += pageCount;
+  }
 
   // 2. Render HTML
   const [coverHtml, bodyHtml] = await Promise.all([
@@ -212,12 +225,21 @@ export async function generateProposalPdf(
       pageCounts[slug] = tempDoc.getPageCount();
     }
 
-    // Calculate cumulative start pages
+    // Calculate cumulative start pages, accounting for schedule PDF inserts
     let currentPage = 1;
     const pageMap: Record<string, number> = {};
-    for (const slug of sectionSlugs) {
-      pageMap[slug] = currentPage;
-      currentPage += pageCounts[slug];
+    let bodyScheduleInsertAfter = -1; // 0-based body page index after which to insert PDFs
+    {
+      let bodyPagesSoFar = 0;
+      for (const slug of sectionSlugs) {
+        pageMap[slug] = currentPage;
+        currentPage += pageCounts[slug];
+        bodyPagesSoFar += pageCounts[slug];
+        if (slug === "project_schedule" && totalSchedulePdfPages > 0) {
+          bodyScheduleInsertAfter = bodyPagesSoFar - 1;
+          currentPage += totalSchedulePdfPages;
+        }
+      }
     }
 
     // Pass 2: show all sections, inject TOC page numbers, render final PDF
@@ -256,12 +278,20 @@ export async function generateProposalPdf(
     }
 
     const bodyDoc = await PDFDocument.load(bodyPdfBuffer);
-    const bodyPages = await mergedPdf.copyPages(
-      bodyDoc,
-      bodyDoc.getPageIndices()
-    );
-    for (const page of bodyPages) {
-      mergedPdf.addPage(page);
+    const bodyPageCount = bodyDoc.getPageCount();
+    for (let i = 0; i < bodyPageCount; i++) {
+      const [copiedPage] = await mergedPdf.copyPages(bodyDoc, [i]);
+      mergedPdf.addPage(copiedPage);
+
+      // Insert schedule PDF pages right after the project_schedule section
+      if (i === bodyScheduleInsertAfter && schedulePdfDocs.length > 0) {
+        for (const { doc } of schedulePdfDocs) {
+          const schedPages = await mergedPdf.copyPages(doc, doc.getPageIndices());
+          for (const sp of schedPages) {
+            mergedPdf.addPage(sp);
+          }
+        }
+      }
     }
 
     // Set metadata

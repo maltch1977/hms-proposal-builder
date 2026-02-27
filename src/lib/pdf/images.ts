@@ -95,3 +95,29 @@ export async function resolveAllImages(data: {
 
   return { logoBase64, coverPhotoBase64, orgChartBase64, caseStudyPhotos, scheduleFileImages };
 }
+
+/**
+ * Download schedule PDF files from Supabase storage as raw buffers.
+ * Image files are handled separately by resolveAllImages.
+ */
+export async function resolveSchedulePdfBuffers(data: {
+  sections: Array<{ slug: string; content: Record<string, unknown> }>;
+}): Promise<Uint8Array[]> {
+  const schedSection = data.sections.find((s) => s.slug === "project_schedule");
+  const files = (schedSection?.content.files as Array<{ url: string; filename: string; type: string }>) || [];
+  const pdfFiles = files.filter(
+    (f) => f.type === "application/pdf" || f.filename?.toLowerCase().endsWith(".pdf")
+  );
+
+  const buffers: Uint8Array[] = [];
+  for (const file of pdfFiles) {
+    try {
+      const res = await fetch(file.url);
+      if (!res.ok) continue;
+      buffers.push(new Uint8Array(await res.arrayBuffer()));
+    } catch {
+      console.warn(`[pdf/images] Failed to fetch schedule PDF: ${file.url}`);
+    }
+  }
+  return buffers;
+}

@@ -603,8 +603,8 @@ function renderFirmBackgroundSection(
 
   if (caseStudies.length > 0) {
     content += `
-      <div>
-        <div class="subsection-title">Case Studies</div>
+      <div style="break-before: page;">
+        <div class="section-title-bar">Case Studies</div>
         ${caseStudies
           .map(
             (cs, idx) => {

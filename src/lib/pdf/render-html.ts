@@ -429,18 +429,68 @@ export async function renderBodyHtml(
 
 // ─── Schedule Landscape HTML (rendered as separate PDF) ──────
 export async function renderScheduleLandscapeHtml(
-  scheduleFileImages: string[]
+  scheduleFileImages: string[],
+  pageInfo: {
+    startPageNum: number;
+    totalPages: number;
+    logoBase64: string;
+    companyName: string;
+    projectLabel: string;
+    clientName: string;
+    footerCompanyName: string;
+  }
 ): Promise<string | null> {
   if (scheduleFileImages.length === 0) return null;
   const fontBase64 = await getFontBase64();
-  const body = scheduleFileImages
-    .map(
-      (img, i) => `<div style="${i > 0 ? "break-before: page;" : ""} text-align: center;">
-        <img src="${img}" style="max-width: 100%; max-height: 6.5in; object-fit: contain;" />
-      </div>`
-    )
+
+  const pages = scheduleFileImages
+    .map((img, i) => {
+      const pageNum = pageInfo.startPageNum + i;
+      return `
+      <div style="
+        width: 11in; height: 8.5in;
+        display: flex; flex-direction: column;
+        ${i > 0 ? "break-before: page;" : ""}
+      ">
+        <div style="padding: 0.35in 0.75in 0 0.75in; flex-shrink: 0;">
+          <div style="
+            width: 100%; font-size: 8px; display: flex;
+            justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #C9A227; padding-bottom: 6px;
+          ">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              ${pageInfo.logoBase64 ? `<img src="${pageInfo.logoBase64}" style="width: 28px; height: 28px; object-fit: contain;" />` : ""}
+              <div>
+                <div style="font-weight: 700; color: #1B365D; letter-spacing: 1px; font-size: 8px;">
+                  ${(pageInfo.companyName || "HMS Commercial Service, Inc.").toUpperCase()}
+                </div>
+                <div style="color: #666666; font-size: 7px;">${esc(pageInfo.projectLabel)}</div>
+              </div>
+            </div>
+            <div style="color: #666666; font-size: 7px; text-align: right;">
+              ${esc(pageInfo.clientName)}
+            </div>
+          </div>
+        </div>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.1in 0.75in; overflow: hidden;">
+          <img src="${img}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+        </div>
+        <div style="padding: 0 0.75in 0.3in 0.75in; flex-shrink: 0;">
+          <div style="
+            width: 100%; font-size: 7px; display: flex;
+            justify-content: space-between; align-items: center;
+            border-top: 0.5px solid #E0E0E0; padding-top: 4px; color: #666666;
+          ">
+            <span>${esc(pageInfo.footerCompanyName) || "HMS Commercial Service, Inc."}</span>
+            <span>Page ${pageNum} of ${pageInfo.totalPages}</span>
+          </div>
+        </div>
+      </div>`;
+    })
     .join("");
-  return wrapHtml(body, fontBase64);
+
+  const extraCSS = `@page { margin: 0; } html, body { margin: 0; padding: 0; }`;
+  return wrapHtml(pages, fontBase64, extraCSS);
 }
 
 // ─── Section Router ──────────────────────────────────────────

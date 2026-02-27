@@ -93,7 +93,10 @@ function headerTemplate(
   `;
 }
 
-function footerTemplate(companyName: string): string {
+function footerTemplate(companyName: string, totalPages?: number): string {
+  const totalPart = totalPages != null
+    ? String(totalPages)
+    : `<span class="totalPages"></span>`;
   return `
     <div style="
       width: 100%;
@@ -108,7 +111,7 @@ function footerTemplate(companyName: string): string {
       color: #666666;
     ">
       <span>${companyName || "HMS Commercial Service, Inc."}</span>
-      <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+      <span>Page <span class="pageNumber"></span> of ${totalPart}</span>
     </div>
   `;
 }
@@ -211,9 +214,10 @@ export async function generateProposalPdf(
     // 3. Convert schedule PDFs to images using pdf.js inside the browser
     const schedulePdfImages = await convertSchedulePdfToImages(browser, schedulePdfBuffers);
     const allScheduleImages = [...images.scheduleFileImages, ...schedulePdfImages];
+    const scheduleLandscapePageCount = allScheduleImages.length;
 
-    // 4. Render HTML — body has NO schedule images (they render as separate landscape PDF)
-    const [coverHtml, bodyHtml, scheduleLandscapeHtml] = await Promise.all([
+    // 4. Render cover + body HTML (schedule landscape deferred until we know page numbers)
+    const [coverHtml, bodyHtml] = await Promise.all([
       renderCoverHtml(data, {
         logoBase64: images.logoBase64,
         coverPhotoBase64: images.coverPhotoBase64,
@@ -223,7 +227,6 @@ export async function generateProposalPdf(
         orgChartBase64: images.orgChartBase64,
         caseStudyPhotos: images.caseStudyPhotos,
       }),
-      renderScheduleLandscapeHtml(allScheduleImages),
     ]);
 
     // 5. Render cover PDF (no margins, no header/footer)
@@ -236,19 +239,20 @@ export async function generateProposalPdf(
     });
     await coverPage.close();
 
-    // 6. Shared header/footer for body + schedule
     const hasCover = data.sections.some(
       (s) => s.slug === "cover_page" && s.isEnabled
     );
 
+    // 6. Shared header + margin config
+    const companyName = data.companyName || "HMS Commercial Service, Inc.";
+    const projectLabel = data.projectLabel || "RESPONSE TO RFP";
+    const footerCompanyName = data.footerText || companyName;
+
     const hdrTpl = headerTemplate(
       images.logoBase64,
-      data.companyName || "HMS Commercial Service, Inc.",
-      data.projectLabel || "RESPONSE TO RFP",
+      companyName,
+      projectLabel,
       data.clientName
-    );
-    const ftrTpl = footerTemplate(
-      data.footerText || data.companyName || "HMS Commercial Service, Inc."
     );
     const sharedMargin = {
       top: "1in",
@@ -257,46 +261,26 @@ export async function generateProposalPdf(
       left: "0.75in",
     };
 
-    const bodyPdfOpts = {
-      format: "Letter" as const,
-      printBackground: true,
-      displayHeaderFooter: true,
-      headerTemplate: hdrTpl,
-      footerTemplate: ftrTpl,
-      margin: sharedMargin,
-    };
-
-    // 7. Render schedule landscape PDF (separate from body)
-    let scheduleLandscapePdfBuffer: Uint8Array | null = null;
-    let scheduleLandscapePageCount = 0;
-    if (scheduleLandscapeHtml) {
-      const schedPage = await browser.newPage();
-      await schedPage.setContent(scheduleLandscapeHtml, { waitUntil: "networkidle0" });
-      const buf = await schedPage.pdf({
-        format: "Letter",
-        landscape: true,
-        printBackground: true,
-        displayHeaderFooter: true,
-        headerTemplate: hdrTpl,
-        footerTemplate: ftrTpl,
-        margin: sharedMargin,
-      });
-      await schedPage.close();
-      scheduleLandscapePdfBuffer = buf;
-      const tempDoc = await PDFDocument.load(buf);
-      scheduleLandscapePageCount = tempDoc.getPageCount();
-    }
-
-    // 8. Render body PDF (two-pass: measure page counts, then render with TOC page numbers)
+    // 7. Body pass 1: measure page counts per section
     const bodyPage = await browser.newPage();
     await bodyPage.setContent(bodyHtml, { waitUntil: "networkidle0" });
 
-    // Pass 1: measure page count per section by isolating each one
     const sectionSlugs: string[] = await bodyPage.evaluate(() => {
       return [...document.querySelectorAll("section.pdf-section")]
         .map((s) => s.getAttribute("data-slug") || "")
         .filter(Boolean);
     });
+
+    // Use temporary footer for measurement (total doesn't matter for counting)
+    const measureFtr = footerTemplate(footerCompanyName);
+    const measureOpts = {
+      format: "Letter" as const,
+      printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: hdrTpl,
+      footerTemplate: measureFtr,
+      margin: sharedMargin,
+    };
 
     const pageCounts: Record<string, number> = {};
     for (const slug of sectionSlugs) {
@@ -312,23 +296,55 @@ export async function generateProposalPdf(
         });
       }, slug);
 
-      const tempPdf = await bodyPage.pdf(bodyPdfOpts);
+      const tempPdf = await bodyPage.pdf(measureOpts);
       const tempDoc = await PDFDocument.load(tempPdf);
       pageCounts[slug] = tempDoc.getPageCount();
     }
 
-    // Calculate cumulative start pages (include landscape schedule pages after schedule section)
+    // 8. Compute page map, schedule start page, and total page count
     let currentPage = 1;
     const pageMap: Record<string, number> = {};
+    let scheduleStartPage = -1;
     for (const slug of sectionSlugs) {
       pageMap[slug] = currentPage;
       currentPage += pageCounts[slug];
       if (slug === "project_schedule") {
+        scheduleStartPage = currentPage; // first landscape page number
         currentPage += scheduleLandscapePageCount;
       }
     }
+    const totalPages = currentPage - 1;
 
-    // Pass 2: show all sections, inject TOC page numbers, render final PDF
+    // 9. Render schedule landscape HTML with correct page numbers baked in
+    const scheduleLandscapeHtml = allScheduleImages.length > 0
+      ? await renderScheduleLandscapeHtml(allScheduleImages, {
+          startPageNum: scheduleStartPage,
+          totalPages,
+          logoBase64: images.logoBase64,
+          companyName,
+          projectLabel,
+          clientName: data.clientName,
+          footerCompanyName,
+        })
+      : null;
+
+    // 10. Render schedule landscape PDF (header/footer baked into HTML, zero margins)
+    let scheduleLandscapePdfBuffer: Uint8Array | null = null;
+    if (scheduleLandscapeHtml) {
+      const schedPage = await browser.newPage();
+      await schedPage.setContent(scheduleLandscapeHtml, { waitUntil: "networkidle0" });
+      const buf = await schedPage.pdf({
+        format: "Letter",
+        landscape: true,
+        printBackground: true,
+        displayHeaderFooter: false,
+        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      });
+      await schedPage.close();
+      scheduleLandscapePdfBuffer = buf;
+    }
+
+    // 11. Body pass 2: inject TOC page numbers, render with correct total
     await bodyPage.evaluate((map: Record<string, number>) => {
       document.querySelectorAll("section.pdf-section").forEach((s) => {
         const el = s as HTMLElement;
@@ -344,10 +360,18 @@ export async function generateProposalPdf(
       });
     }, pageMap);
 
-    const bodyPdfBuffer = await bodyPage.pdf(bodyPdfOpts);
+    const finalFtr = footerTemplate(footerCompanyName, totalPages);
+    const bodyPdfBuffer = await bodyPage.pdf({
+      format: "Letter",
+      printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: hdrTpl,
+      footerTemplate: finalFtr,
+      margin: sharedMargin,
+    });
     await bodyPage.close();
 
-    // 9. Merge PDFs with pdf-lib — splice landscape schedule pages after schedule section
+    // 12. Merge PDFs with pdf-lib — splice landscape schedule pages after schedule section
     const mergedPdf = await PDFDocument.create();
 
     if (hasCover) {
@@ -357,14 +381,13 @@ export async function generateProposalPdf(
     }
 
     const bodyDoc = await PDFDocument.load(bodyPdfBuffer);
-    // Find the 0-based body page index after which to insert landscape schedule pages
     let scheduleInsertAfterIdx = -1;
     {
       let idx = 0;
       for (const slug of sectionSlugs) {
         idx += pageCounts[slug];
         if (slug === "project_schedule") {
-          scheduleInsertAfterIdx = idx - 1; // 0-based index of last page of schedule section
+          scheduleInsertAfterIdx = idx - 1;
           break;
         }
       }
@@ -379,7 +402,6 @@ export async function generateProposalPdf(
       const [page] = await mergedPdf.copyPages(bodyDoc, [i]);
       mergedPdf.addPage(page);
 
-      // After the schedule section's body pages, insert landscape schedule pages
       if (scheduleLandscapeDoc && i === scheduleInsertAfterIdx) {
         const schedPages = await mergedPdf.copyPages(
           scheduleLandscapeDoc,
@@ -389,9 +411,8 @@ export async function generateProposalPdf(
       }
     }
 
-    // Set metadata
     mergedPdf.setTitle(data.title);
-    mergedPdf.setAuthor(data.companyName || "HMS Commercial Service, Inc.");
+    mergedPdf.setAuthor(companyName);
     mergedPdf.setSubject(`Proposal for ${data.clientName}`);
     mergedPdf.setCreator("HMS Proposal Builder");
 

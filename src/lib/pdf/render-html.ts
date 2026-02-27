@@ -217,23 +217,24 @@ const sharedCSS = `
   }
   .personnel-card:last-child { border-bottom: none; }
   .personnel-card .p-name {
-    font-size: 10pt;
+    font-size: 10.5pt;
     font-weight: 700;
     color: ${C.navy};
+    margin-bottom: 2px;
   }
   .personnel-card .p-role {
-    font-size: 9pt;
-    color: ${C.darkGray};
+    font-size: 10pt;
+    color: ${C.bodyText};
     margin-top: 2px;
   }
   .personnel-card .p-stats {
-    font-size: 8.5pt;
-    color: ${C.darkGray};
+    font-size: 10pt;
+    color: ${C.bodyText};
     margin-top: 4px;
   }
   .personnel-card .p-certs {
-    font-size: 8.5pt;
-    color: ${C.darkGray};
+    font-size: 10pt;
+    color: ${C.bodyText};
     margin-top: 4px;
   }
   .personnel-card .p-bio {

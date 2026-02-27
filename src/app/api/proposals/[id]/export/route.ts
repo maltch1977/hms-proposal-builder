@@ -238,10 +238,26 @@ export async function GET(
       referenceCount: docData.references.length,
       costRowCount: docData.costData.rows.length,
       emrRatingCount: docData.emrRatings.length,
-      scheduleFiles: (() => {
+      scheduleFiles: await (async () => {
         const schedSec = docData.sections.find(s => s.slug === "project_schedule");
         const files = (schedSec?.content.files as Array<{ url: string; filename: string; type: string }>) || [];
-        return { count: files.length, files: files.map(f => ({ filename: f.filename, type: f.type })) };
+        const fileDetails = [];
+        for (const f of files) {
+          let pageCount: number | null = null;
+          if (f.type === "application/pdf") {
+            try {
+              const { PDFDocument } = await import("pdf-lib");
+              const res = await fetch(f.url);
+              if (res.ok) {
+                const buf = await res.arrayBuffer();
+                const doc = await PDFDocument.load(buf);
+                pageCount = doc.getPageCount();
+              }
+            } catch { /* ignore */ }
+          }
+          fileDetails.push({ filename: f.filename, type: f.type, url: f.url, pageCount });
+        }
+        return { count: files.length, files: fileDetails };
       })(),
     });
   }

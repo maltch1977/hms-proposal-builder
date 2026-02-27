@@ -530,16 +530,14 @@ function renderFirmBackgroundSection(
             (cs, idx) => {
               const photo = caseStudyPhotos[idx] || "";
               return `
-          <div class="case-study-card" style="overflow: hidden;">
-            <div class="cs-name" style="text-align: center; font-size: 11pt; margin-bottom: 6px; text-decoration: underline;">
+          <div class="case-study-card" style="overflow: hidden; margin-bottom: 6px; padding: 6px 8px;">
+            <div class="cs-name" style="text-align: center; font-size: 10pt; margin-bottom: 2px; text-decoration: underline;">
               ${esc(cs.projectName)}
             </div>
-            <div style="margin-bottom: 4px;">
-              ${photo ? `<img src="${photo}" style="float: right; width: 200px; height: 140px; object-fit: cover; margin: 0 0 8px 12px; border-radius: 2px;" />` : ""}
-              <div class="cs-meta" style="margin-bottom: 4px;">
-                ${esc(cs.clientName)} &mdash; ${esc(cs.buildingType)}${cs.squareFootage ? ` &mdash; ${cs.squareFootage.toLocaleString()} SF` : ""}
-              </div>
-              ${cs.narrative ? `<div class="cs-narrative">${esc(cs.narrative)}</div>` : ""}
+            ${cs.squareFootage ? `<div style="text-align: center; font-size: 8pt; color: ${C.darkGray}; margin-bottom: 4px;">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
+            <div>
+              ${photo ? `<img src="${photo}" style="float: right; width: 170px; height: 110px; object-fit: cover; margin: 0 0 4px 10px; border-radius: 2px;" />` : ""}
+              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 8pt; line-height: 1.35;">${esc(cs.narrative)}</div>` : ""}
             </div>
           </div>`;
             }

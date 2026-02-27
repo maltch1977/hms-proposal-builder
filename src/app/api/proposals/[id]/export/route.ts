@@ -204,6 +204,28 @@ export async function GET(
     emrRatings: emrRatingsData,
   };
 
+  // Debug mode: return assembled data as JSON for verification
+  const debug = request.nextUrl.searchParams.get("debug");
+  if (debug === "1") {
+    return NextResponse.json({
+      _debug: true,
+      sectionCount: docData.sections.length,
+      enabledSections: docData.sections.filter(s => s.isEnabled).map(s => s.slug),
+      caseStudyCount: docData.caseStudies.length,
+      caseStudies: docData.caseStudies.map(cs => ({
+        projectName: cs.projectName,
+        hasNarrative: !!cs.narrative,
+        hasPhoto: !!cs.photoUrl,
+      })),
+      personnelCount: docData.personnel.length,
+      referenceCount: docData.references.length,
+      costRowCount: docData.costData.rows.length,
+      emrRatingCount: docData.emrRatings.length,
+      firmBackgroundEnabled: docData.sections.some(s => s.slug === "firm_background" && s.isEnabled),
+      firmBackgroundContent: docData.sections.find(s => s.slug === "firm_background")?.content,
+    });
+  }
+
   try {
     const pdfBytes = await generateProposalPdf(docData);
 

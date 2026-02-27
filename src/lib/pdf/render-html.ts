@@ -561,9 +561,6 @@ function renderTocSection(slug: string, entries: { slug: string; title: string }
     slug,
     "Table of Contents",
     `
-    <div style="font-size: 10pt; font-weight: 700; color: ${C.navy}; letter-spacing: 2px; margin-bottom: 16px;">
-      TABLE OF CONTENTS
-    </div>
     <div class="gold-accent"></div>
     ${rows}
   `

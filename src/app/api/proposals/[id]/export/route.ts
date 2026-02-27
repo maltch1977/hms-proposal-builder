@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import type { Tables } from "@/lib/types/database";
 import type { ProposalDocumentData } from "@/lib/pdf/types";
 import { generateProposalPdf } from "@/lib/pdf/generate-pdf";
@@ -7,6 +8,13 @@ import { generateProposalPdf } from "@/lib/pdf/generate-pdf";
 export const maxDuration = 60;
 
 type SectionType = Tables<"section_types">;
+
+function getAdminClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function GET(
   request: NextRequest,
@@ -48,22 +56,25 @@ export async function GET(
     .eq("proposal_id", proposalId)
     .order("order_index");
 
+  // Use admin client for junction tables (RLS policies filter these with anon key)
+  const admin = getAdminClient();
+
   // Fetch team members with personnel
-  const { data: teamMembers, error: teamError } = await supabase
+  const { data: teamMembers, error: teamError } = await admin
     .from("proposal_team_members")
     .select("*, personnel:personnel(*)")
     .eq("proposal_id", proposalId)
     .order("order_index");
 
   // Fetch case studies with projects
-  const { data: caseStudies, error: caseStudyError } = await supabase
+  const { data: caseStudies, error: caseStudyError } = await admin
     .from("proposal_case_studies")
     .select("*, project:past_projects(*)")
     .eq("proposal_id", proposalId)
     .order("order_index");
 
   // Fetch references
-  const { data: proposalRefs, error: refError } = await supabase
+  const { data: proposalRefs, error: refError } = await admin
     .from("proposal_references")
     .select("*, reference:references(*)")
     .eq("proposal_id", proposalId)

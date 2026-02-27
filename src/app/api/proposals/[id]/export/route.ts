@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { renderToBuffer } from "@react-pdf/renderer";
-import { ProposalDocument } from "@/components/pdf/proposal-document";
-import type { ProposalDocumentData } from "@/components/pdf/proposal-document";
 import type { Tables } from "@/lib/types/database";
-import React from "react";
-import path from "path";
+import type { ProposalDocumentData } from "@/lib/pdf/types";
+import { generateProposalPdf } from "@/lib/pdf/generate-pdf";
+
+export const maxDuration = 60;
 
 type SectionType = Tables<"section_types">;
 
@@ -97,7 +96,7 @@ export async function GET(
     }));
   }
 
-  // Assemble document data
+  // Assemble document data — keep image URLs as-is, images.ts resolves to base64 later
   const docData: ProposalDocumentData = {
     title: proposal.title,
     clientName: proposal.client_name,
@@ -105,14 +104,7 @@ export async function GET(
     projectLabel: proposal.project_label || "RESPONSE TO RFP",
     coverTemplate: proposal.cover_template,
     coverPhotoUrl: proposal.cover_photo_url || undefined,
-    logoUrl: (() => {
-      const raw = org?.logo_url || "/images/hms_logo.png";
-      // Resolve relative paths to filesystem for server-side react-pdf rendering
-      if (raw.startsWith("/")) {
-        return path.join(process.cwd(), "public", raw);
-      }
-      return raw;
-    })(),
+    logoUrl: org?.logo_url || "/images/hms_logo.png",
     companyName: org?.company_name || org?.name || "HMS Commercial Service, Inc.",
     companyAddress: org?.company_address || undefined,
     companyPhone: org?.company_phone || undefined,
@@ -123,18 +115,14 @@ export async function GET(
       const slug = (s as unknown as { section_type: SectionType }).section_type.slug;
       const content = (s.content || {}) as Record<string, unknown>;
 
-      // Resolve org chart image path for server-side PDF rendering
+      // Keep org chart image URL as-is — images.ts resolves to base64
       if (slug === "key_personnel") {
         const mode = (content.org_chart_mode as string) || "upload";
         if (mode === "upload") {
           const stored = content.org_chart_image as string | undefined;
-          // Use default unless a real custom upload exists (non-static-path)
-          const imgUrl = (stored && !stored.startsWith("/images/"))
-            ? stored
-            : "/images/hms_org_chart.png";
-          content.org_chart_image = imgUrl.startsWith("/")
-            ? path.join(process.cwd(), "public", imgUrl)
-            : imgUrl;
+          if (!stored || stored.startsWith("/images/")) {
+            content.org_chart_image = "/images/hms_org_chart.png";
+          }
         }
       }
 
@@ -206,13 +194,11 @@ export async function GET(
   };
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const element = React.createElement(ProposalDocument, { data: docData }) as any;
-    const buffer = await renderToBuffer(element);
+    const pdfBytes = await generateProposalPdf(docData);
 
     const filename = `${proposal.title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_")}_Proposal.pdf`;
 
-    return new NextResponse(new Uint8Array(buffer), {
+    return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,

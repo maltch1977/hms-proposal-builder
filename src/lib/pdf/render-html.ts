@@ -49,9 +49,9 @@ const sharedCSS = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Inter', -apple-system, sans-serif;
-    font-size: 10.5pt;
+    font-size: 10pt;
     color: ${C.bodyText};
-    line-height: 1.65;
+    line-height: 1.6;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -105,8 +105,8 @@ const sharedCSS = `
     margin-bottom: 4px;
   }
   .tiptap-content p {
-    margin-bottom: 6px;
-    line-height: 1.65;
+    margin-bottom: 14px;
+    line-height: 1.6;
   }
   .tiptap-content ul, .tiptap-content ol {
     margin-left: 18px;

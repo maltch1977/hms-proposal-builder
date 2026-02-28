@@ -71,6 +71,7 @@ export interface ReferenceCheckContent {
 
 export interface InterviewPanelContent {
   interview_member_ids?: string[];  // personnel IDs selected for interview
+  interview_descriptions?: Record<string, string>; // personnel_id → one-liner description
   requirement_responses?: Record<string, string>;
 }
 

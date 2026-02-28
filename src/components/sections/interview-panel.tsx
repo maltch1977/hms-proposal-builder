@@ -43,9 +43,10 @@ export function InterviewPanel({ proposalId, content, onChange }: InterviewPanel
     if (content.interview_member_ids && content.interview_member_ids.length > 0) {
       return new Set(content.interview_member_ids);
     }
-    // Default: all current team members
     return new Set(teamMembers.map((m) => m.personnel_id));
   })();
+
+  const descriptions = content.interview_descriptions || {};
 
   const toggleMember = (personnelId: string) => {
     const next = new Set(selectedIds);
@@ -55,6 +56,13 @@ export function InterviewPanel({ proposalId, content, onChange }: InterviewPanel
       next.add(personnelId);
     }
     onChange({ ...content, interview_member_ids: Array.from(next) });
+  };
+
+  const updateDescription = (personnelId: string, value: string) => {
+    onChange({
+      ...content,
+      interview_descriptions: { ...descriptions, [personnelId]: value },
+    });
   };
 
   const selectAll = () => {
@@ -126,32 +134,46 @@ export function InterviewPanel({ proposalId, content, onChange }: InterviewPanel
       <div className="divide-y divide-border">
         {teamMembers.map((member) => {
           const isSelected = selectedIds.has(member.personnel_id);
+          const desc = descriptions[member.personnel_id] || "";
           return (
-            <button
-              key={member.id}
-              type="button"
-              onClick={() => toggleMember(member.personnel_id)}
-              className="flex items-center gap-3 w-full py-2.5 px-1 text-left transition-colors"
-            >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-hms-navy/10 flex-shrink-0">
-                <User className="h-3.5 w-3.5 text-hms-navy" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span
-                  className={`text-sm font-medium transition-colors ${
-                    isSelected ? "text-hms-navy" : "text-muted-foreground"
-                  }`}
-                >
-                  {member.personnel.full_name}
-                </span>
-                <span className="text-xs text-muted-foreground ml-2">
-                  {member.role_override || member.personnel.role_type}
-                </span>
-              </div>
+            <div key={member.id} className="py-2.5 px-1">
+              <button
+                type="button"
+                onClick={() => toggleMember(member.personnel_id)}
+                className="flex items-center gap-3 w-full text-left transition-colors"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-hms-navy/10 flex-shrink-0">
+                  <User className="h-3.5 w-3.5 text-hms-navy" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span
+                    className={`text-sm font-medium transition-colors ${
+                      isSelected ? "text-hms-navy" : "text-muted-foreground"
+                    }`}
+                  >
+                    {member.personnel.full_name}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {member.role_override || member.personnel.role_type}
+                  </span>
+                </div>
+                {isSelected && (
+                  <Check className="h-4 w-4 text-hms-navy flex-shrink-0" />
+                )}
+              </button>
               {isSelected && (
-                <Check className="h-4 w-4 text-hms-navy flex-shrink-0" />
+                <div className="mt-1.5 ml-10">
+                  <textarea
+                    value={desc}
+                    onChange={(e) => updateDescription(member.personnel_id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="Interview panel description..."
+                    rows={2}
+                    className="w-full text-xs bg-transparent border border-border rounded px-2 py-1.5 resize-y focus:border-muted-foreground focus:ring-0 focus:outline-none placeholder:text-muted-foreground/50"
+                  />
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>

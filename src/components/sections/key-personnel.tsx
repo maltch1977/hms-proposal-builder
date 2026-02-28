@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/editor/file-upload";
-import { Library, ChevronRight, ChevronDown, ListChecks, Upload, GitBranch } from "lucide-react";
+import { Library, ChevronRight, ChevronDown, ListChecks, Upload, GitBranch, Check, User } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/lib/types/database";
 import type { KeyPersonnelContent } from "@/lib/types/section";
@@ -151,6 +151,38 @@ export function KeyPersonnel({
       return;
     }
     onTeamChange();
+  };
+
+  const handleRoleOverride = async (memberId: string, role: string) => {
+    const res = await fetch(`/api/proposals/${proposalId}/team-members`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ member_id: memberId, role_override: role || null }),
+    });
+    if (res.ok) {
+      onTeamChange();
+      toast.success("Role updated");
+    } else {
+      toast.error("Failed to update role");
+    }
+  };
+
+  // Qualifications toggle: which team members appear on Personnel Qualifications PDF page
+  const qualMemberIds: Set<string> = (() => {
+    if (content?.qualifications_member_ids && content.qualifications_member_ids.length > 0) {
+      return new Set(content.qualifications_member_ids);
+    }
+    return new Set(teamMembers.map((m) => m.personnel_id));
+  })();
+
+  const toggleQualMember = (personnelId: string) => {
+    const next = new Set(qualMemberIds);
+    if (next.has(personnelId)) {
+      next.delete(personnelId);
+    } else {
+      next.add(personnelId);
+    }
+    onChange?.({ ...content, qualifications_member_ids: Array.from(next) });
   };
 
   return (
@@ -293,36 +325,62 @@ export function KeyPersonnel({
 
           <div className="border-t border-border pt-6 space-y-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Personnel Bios
+              Personnel Qualifications
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Toggle who appears on the Personnel Qualifications PDF page. Edit roles inline — changes apply everywhere.
             </p>
             <RFPReferenceBlock requirements={rfpRequirements} />
             {teamMembers.map((member) => {
               const proposalBio = content?.member_bios?.[member.personnel_id];
-              // undefined (key missing) → falls back to library bio
-              // "" (explicitly cleared) → stays empty
               const isLibraryFallback = proposalBio === undefined && !!member.personnel.bio;
               const bioValue = proposalBio ?? member.personnel.bio ?? "";
+              const isInQual = qualMemberIds.has(member.personnel_id);
 
               return (
-                <PersonnelBioCard
-                  key={member.id}
-                  member={member}
-                  bio={bioValue}
-                  onBioChange={(html) => {
-                    onChange?.({
-                      ...content,
-                      member_bios: {
-                        ...(content?.member_bios || {}),
-                        [member.personnel_id]: html,
-                      },
-                    });
-                  }}
-                  isLibraryFallback={isLibraryFallback}
-                  onSaveToLibrary={() => {
-                    const currentBio = content?.member_bios?.[member.personnel_id] ?? bioValue;
-                    handleSaveToLibrary(member.personnel_id, currentBio);
-                  }}
-                />
+                <div key={member.id} className="space-y-2">
+                  {/* Include/exclude toggle */}
+                  <button
+                    type="button"
+                    onClick={() => toggleQualMember(member.personnel_id)}
+                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <div className={`flex h-5 w-5 items-center justify-center rounded-full flex-shrink-0 ${isInQual ? "bg-hms-navy/10" : "bg-muted"}`}>
+                      {isInQual ? (
+                        <Check className="h-3 w-3 text-hms-navy" />
+                      ) : (
+                        <User className="h-3 w-3 text-muted-foreground" />
+                      )}
+                    </div>
+                    <span className={isInQual ? "text-foreground" : "text-muted-foreground line-through"}>
+                      {member.personnel.full_name}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {isInQual ? "— included in PDF" : "— excluded from PDF"}
+                    </span>
+                  </button>
+                  {isInQual && (
+                    <PersonnelBioCard
+                      member={member}
+                      bio={bioValue}
+                      onBioChange={(html) => {
+                        onChange?.({
+                          ...content,
+                          member_bios: {
+                            ...(content?.member_bios || {}),
+                            [member.personnel_id]: html,
+                          },
+                        });
+                      }}
+                      isLibraryFallback={isLibraryFallback}
+                      onSaveToLibrary={() => {
+                        const currentBio = content?.member_bios?.[member.personnel_id] ?? bioValue;
+                        handleSaveToLibrary(member.personnel_id, currentBio);
+                      }}
+                      onRoleChange={(role) => handleRoleOverride(member.id, role)}
+                    />
+                  )}
+                </div>
               );
             })}
           </div>

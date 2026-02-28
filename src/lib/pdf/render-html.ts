@@ -462,7 +462,7 @@ export async function renderBodyHtml(
   const sectionHtmls: string[] = [];
 
   for (const section of bodySections) {
-    const html = renderSection(section, data, images, tocEntries, images.caseStudyPhotos, data.interviewPanelPersonnel);
+    const html = renderSection(section, data, images, tocEntries, images.caseStudyPhotos, data.interviewPanelPersonnel, data.qualificationsPersonnel);
     if (html) sectionHtmls.push(html);
   }
 
@@ -542,7 +542,8 @@ function renderSection(
   images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] },
   tocEntries: { slug: string; title: string }[],
   caseStudyPhotos: string[],
-  interviewPanelPersonnel: InterviewPanelEntry[]
+  interviewPanelPersonnel: InterviewPanelEntry[],
+  qualificationsPersonnel: PersonnelEntry[]
 ): string | null {
   switch (section.slug) {
     case "table_of_contents":
@@ -556,7 +557,7 @@ function renderSection(
     case "firm_background":
       return renderFirmBackgroundSection(section.slug, section, data.caseStudies, caseStudyPhotos);
     case "key_personnel":
-      return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64);
+      return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64, qualificationsPersonnel);
     case "project_schedule":
       return renderProjectScheduleSection(section.slug, section);
     case "site_logistics":
@@ -653,7 +654,8 @@ function renderKeyPersonnelSection(
   slug: string,
   section: { content: Record<string, unknown> },
   personnel: PersonnelEntry[],
-  orgChartBase64: string
+  orgChartBase64: string,
+  qualificationsPersonnel: PersonnelEntry[]
 ): string {
   const showOrgChart =
     (section.content.org_chart_mode || "upload") === "upload";
@@ -685,11 +687,11 @@ function renderKeyPersonnelSection(
     orgContent += `</div>`;
   }
 
-  // Page 2: Personnel Qualifications (separate banner via sectionWrap-style markup)
+  // Page 2: Personnel Qualifications — uses independently filtered list
   const qualContent = `
     <div style="break-before: page;">
       <div class="section-title-bar">Personnel Qualifications</div>
-      ${renderPersonnelCards(personnel)}
+      ${renderPersonnelCards(qualificationsPersonnel)}
     </div>
   `;
 

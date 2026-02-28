@@ -231,6 +231,41 @@ export async function GET(
       };
     })(),
     emrRatings: emrRatingsData,
+    qualificationsPersonnel: (() => {
+      // Read qualifications_member_ids from key_personnel section content
+      const kpSection = (sections || []).find((s) => {
+        const st = (s as unknown as { section_type: SectionType }).section_type;
+        return st.slug === "key_personnel";
+      });
+      const kpContent = (kpSection?.content || {}) as Record<string, unknown>;
+      const qualIds = kpContent.qualifications_member_ids as string[] | undefined;
+      const memberBios = kpContent.member_bios as Record<string, string> | undefined;
+
+      const allPersonnel = (teamMembers || []).map((m) => {
+        const p = (m as unknown as { personnel: Tables<"personnel"> }).personnel;
+        return {
+          personnelId: p.id,
+          entry: {
+            fullName: p.full_name,
+            title: p.title,
+            roleType: m.role_override || p.role_type,
+            yearsIndustry: p.years_in_industry,
+            yearsCompany: p.years_at_company,
+            yearsWithDistech: p.years_with_distech,
+            taskDescription: p.task_description,
+            specialties: p.specialties || [],
+            certifications: p.certifications || [],
+            bio: memberBios?.[p.id] ?? p.bio ?? null,
+          },
+        };
+      });
+
+      if (qualIds && qualIds.length > 0) {
+        const idSet = new Set(qualIds);
+        return allPersonnel.filter((p) => idSet.has(p.personnelId)).map((p) => p.entry);
+      }
+      return allPersonnel.map((p) => p.entry);
+    })(),
     interviewPanelPersonnel: (() => {
       // Find interview_panel section and read interview_member_ids from its content
       const ipSection = (sections || []).find((s) => {

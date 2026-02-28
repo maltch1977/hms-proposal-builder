@@ -13,9 +13,10 @@ interface PersonnelBioCardProps {
   onBioChange: (html: string) => void;
   isLibraryFallback?: boolean;
   onSaveToLibrary?: () => void;
+  onRoleChange?: (role: string) => void;
 }
 
-export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, onSaveToLibrary }: PersonnelBioCardProps) {
+export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, onSaveToLibrary, onRoleChange }: PersonnelBioCardProps) {
   const p = member.personnel;
   const displayRole = member.role_override || p.title;
 
@@ -46,7 +47,22 @@ export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, 
           <h4 className="text-sm font-semibold text-foreground truncate">
             {p.full_name}
           </h4>
-          <p className="text-xs text-muted-foreground truncate">{displayRole}</p>
+          {onRoleChange ? (
+            <input
+              type="text"
+              defaultValue={member.role_override || ""}
+              placeholder={p.role_type}
+              onBlur={(e) => {
+                const val = e.target.value.trim();
+                if (val !== (member.role_override || "")) {
+                  onRoleChange(val);
+                }
+              }}
+              className="text-xs text-muted-foreground w-full bg-transparent border-0 border-b border-transparent hover:border-border focus:border-muted-foreground p-0 focus:ring-0 focus:outline-none placeholder:text-muted-foreground/50"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground truncate">{displayRole}</p>
+          )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {onSaveToLibrary && (

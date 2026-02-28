@@ -25,6 +25,7 @@ export interface KeyPersonnelContent {
   org_chart_image?: string; // URL to a custom org chart image
   requirement_responses?: Record<string, string>;
   member_bios?: Record<string, string>; // personnel_id → HTML bio narrative
+  qualifications_member_ids?: string[]; // personnel IDs shown on Personnel Qualifications PDF page
 }
 
 export interface ProjectScheduleContent {

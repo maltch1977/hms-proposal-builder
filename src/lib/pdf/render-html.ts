@@ -49,11 +49,12 @@ function fontFaceCSS(base64: string): string {
 // Type scale:
 //   Section banner .... 13pt  700  white on navy
 //   h2 (tiptap) ...... 12pt  700  navy
-//   h3 / subsection / card heading .. 10.5pt 700  navy
-//   Body / p / card body ............ 10pt  400  #333  line-height 1.6
-//   Secondary / meta ................ 9pt   400  #666
-//   Table header .................... 8.5pt 700  white on navy
-//   Table cell ...................... 9pt   400  #333
+//   h3 / subsection .. 10.5pt 700  navy
+//   Body / p ......... 10pt  400  #333
+//   Card title ....... 10pt  700  navy
+//   Secondary ........ 9pt   400  #666
+//   Table cell ....... 9pt   400  #333
+//   Fine print ....... 8.5pt 400  #666
 //
 // Spacing:
 //   After section banner: 14px
@@ -190,7 +191,7 @@ const sharedCSS = `
     border-radius: 2px;
   }
   .case-study-card .cs-name {
-    font-size: 10.5pt;
+    font-size: 9.5pt;
     font-weight: 700;
     color: ${C.navy};
     text-align: center;
@@ -198,14 +199,14 @@ const sharedCSS = `
     margin-bottom: 2px;
   }
   .case-study-card .cs-meta {
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: ${C.darkGray};
     text-align: center;
     margin-bottom: 4px;
   }
   .case-study-card .cs-narrative {
-    font-size: 10pt;
-    line-height: 1.6;
+    font-size: 8.5pt;
+    line-height: 1.4;
   }
 
   /* Personnel cards */
@@ -253,7 +254,7 @@ const sharedCSS = `
     margin-bottom: 4px;
   }
   .phase-card .ph-name {
-    font-size: 10.5pt;
+    font-size: 10pt;
     font-weight: 700;
     color: ${C.navy};
   }
@@ -262,8 +263,8 @@ const sharedCSS = `
     color: ${C.darkGray};
   }
   .phase-card .ph-desc {
-    font-size: 10pt;
-    line-height: 1.6;
+    font-size: 9pt;
+    line-height: 1.5;
     margin-bottom: 4px;
   }
   .phase-card .ph-milestones {
@@ -657,8 +658,8 @@ function renderKeyPersonnelSection(
             background: ${idx === 0 ? C.navy : C.blue};
             border-radius: 3px; margin-right: 8px;
           "></span>
-          <span style="font-size: 10pt; font-weight: 700;">${esc(p.fullName)}</span>
-          <span style="font-size: 10pt; color: ${C.darkGray}; margin-left: 6px;">&mdash; ${esc(p.title)}</span>
+          <span style="font-size: 9pt; font-weight: 700;">${esc(p.fullName)}</span>
+          <span style="font-size: 9pt; color: ${C.darkGray}; margin-left: 6px;">&mdash; ${esc(p.title)}</span>
         </div>`
       )
       .join("");
@@ -753,7 +754,7 @@ function renderProjectScheduleSection(slug: string, section: {
     if (strategy.project_duration) {
       content += `
         <div style="margin-bottom: 12px;">
-          <span style="font-size: 10.5pt; font-weight: 700; color: ${C.navy};">
+          <span style="font-size: 10pt; font-weight: 700; color: ${C.navy};">
             Project Duration: ${esc(strategy.project_duration)}
           </span>
         </div>
@@ -762,7 +763,7 @@ function renderProjectScheduleSection(slug: string, section: {
 
     if (strategy.approach_narrative) {
       content += `
-        <div style="margin-bottom: 12px; line-height: 1.6;">
+        <div style="margin-bottom: 12px; font-size: 10pt; line-height: 1.5;">
           ${esc(strategy.approach_narrative)}
         </div>
       `;
@@ -791,8 +792,8 @@ function renderProjectScheduleSection(slug: string, section: {
 
     if (strategy.critical_path && strategy.critical_path.length > 0) {
       content += `
-        <div class="subsection-title">Critical Path</div>
-        <ul style="margin-left: 18px; line-height: 1.6;">
+        <div class="subsection-title" style="margin-top: 12px;">Critical Path</div>
+        <ul style="margin-left: 12px; font-size: 9pt; line-height: 1.4;">
           ${strategy.critical_path.map((item) => `<li>${esc(item)}</li>`).join("")}
         </ul>
       `;
@@ -962,7 +963,7 @@ function renderProjectCostSection(slug: string, costData: {
     content += `
       <div>
         <div class="subsection-title">Notes</div>
-        <div style="line-height: 1.6;">${esc(costData.notes)}</div>
+        <div style="font-size: 9pt; line-height: 1.5;">${esc(costData.notes)}</div>
       </div>
     `;
   }

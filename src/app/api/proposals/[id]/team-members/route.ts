@@ -133,16 +133,24 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   }
 
-  // Single hierarchy update mode (existing behavior)
-  const { member_id, hierarchy_position } = body;
+  // Single member update mode
+  const { member_id, hierarchy_position, role_override } = body;
 
   if (!member_id) {
     return NextResponse.json({ error: "Missing member_id" }, { status: 400 });
   }
 
+  const updatePayload: Record<string, unknown> = {};
+  if (hierarchy_position !== undefined) updatePayload.hierarchy_position = hierarchy_position;
+  if (role_override !== undefined) updatePayload.role_override = role_override;
+
+  if (Object.keys(updatePayload).length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+  }
+
   const { error } = await admin
     .from("proposal_team_members")
-    .update({ hierarchy_position })
+    .update(updatePayload)
     .eq("id", member_id);
 
   if (error) {

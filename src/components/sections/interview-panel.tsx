@@ -108,7 +108,7 @@ export function InterviewPanel({ proposalId, content, onChange }: InterviewPanel
           type="button"
           onClick={selectAll}
           disabled={allSelected}
-          className="text-xs text-text-tertiary hover:text-accent disabled:opacity-40 transition-colors"
+          className="text-xs text-muted-foreground hover:text-hms-navy disabled:opacity-40 transition-colors"
         >
           Select All
         </button>
@@ -116,7 +116,7 @@ export function InterviewPanel({ proposalId, content, onChange }: InterviewPanel
           type="button"
           onClick={clearAll}
           disabled={noneSelected}
-          className="text-xs text-text-tertiary hover:text-accent disabled:opacity-40 transition-colors"
+          className="text-xs text-muted-foreground hover:text-hms-navy disabled:opacity-40 transition-colors"
         >
           Clear All
         </button>
@@ -139,7 +139,7 @@ export function InterviewPanel({ proposalId, content, onChange }: InterviewPanel
               <div className="flex-1 min-w-0">
                 <span
                   className={`text-sm font-medium transition-colors ${
-                    isSelected ? "text-accent" : "text-text-primary"
+                    isSelected ? "text-hms-navy" : "text-muted-foreground"
                   }`}
                 >
                   {member.personnel.full_name}
@@ -149,7 +149,7 @@ export function InterviewPanel({ proposalId, content, onChange }: InterviewPanel
                 </span>
               </div>
               {isSelected && (
-                <Check className="h-4 w-4 text-accent flex-shrink-0" />
+                <Check className="h-4 w-4 text-hms-navy flex-shrink-0" />
               )}
             </button>
           );

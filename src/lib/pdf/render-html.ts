@@ -907,24 +907,6 @@ function renderReferenceSection(slug: string, references: ReferenceEntry[]): str
 
 // ─── Interview Panel ─────────────────────────────────────────
 function renderInterviewPanelSection(slug: string, personnel: InterviewPanelEntry[]): string {
-  // If any member has an interview description, render as a simple list with descriptions
-  const hasDescriptions = personnel.some((p) => p.interviewDescription);
-
-  if (hasDescriptions) {
-    const rows = personnel
-      .map(
-        (p) => `
-        <div style="margin-bottom: 8px; line-height: 1.5;">
-          <span style="font-weight: 700; color: ${C.navy};">${esc(p.roleType)}</span>
-          <span> - ${esc(p.fullName)}</span>
-          ${p.interviewDescription ? ` <span>- ${esc(p.interviewDescription)}</span>` : ""}
-        </div>`
-      )
-      .join("");
-    return sectionWrap(slug, "Interview Panel", rows);
-  }
-
-  // Fallback: render full personnel cards if no descriptions set
   return sectionWrap(slug, "Interview Panel", renderPersonnelCards(personnel));
 }
 

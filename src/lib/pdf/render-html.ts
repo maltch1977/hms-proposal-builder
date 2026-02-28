@@ -611,12 +611,14 @@ function renderFirmBackgroundSection(
             (cs, idx) => {
               const photo = caseStudyPhotos[idx] || "";
               return `
-          <div class="case-study-card" style="overflow: hidden;">
-            <div class="cs-name">${esc(cs.projectName)}</div>
-            ${cs.squareFootage ? `<div class="cs-meta">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
+          <div class="case-study-card" style="overflow: hidden; margin-bottom: 3px; padding: 4px 8px;">
+            <div class="cs-name" style="text-align: center; font-size: 9.5pt; margin-bottom: 1px; text-decoration: underline;">
+              ${esc(cs.projectName)}
+            </div>
+            ${cs.squareFootage ? `<div style="text-align: center; font-size: 7.5pt; color: ${C.darkGray}; margin-bottom: 2px;">${cs.squareFootage.toLocaleString()} SF</div>` : ""}
             <div>
-              ${photo ? `<img src="${photo}" style="float: right; width: 150px; height: 90px; object-fit: cover; margin: 0 0 4px 10px; border-radius: 2px;" />` : ""}
-              ${cs.narrative ? `<div class="cs-narrative">${esc(cs.narrative)}</div>` : ""}
+              ${photo ? `<img src="${photo}" style="float: right; width: 150px; height: 90px; object-fit: cover; margin: 0 0 2px 8px; border-radius: 2px;" />` : ""}
+              ${cs.narrative ? `<div class="cs-narrative" style="font-size: 7.5pt; line-height: 1.3;">${esc(cs.narrative)}</div>` : ""}
             </div>
           </div>`;
             }

@@ -78,6 +78,7 @@ const sharedCSS = `
   section.pdf-section { break-before: page; }
   section.pdf-section:first-child { break-before: auto; }
   h2, h3, .section-title-bar { break-after: avoid; }
+  .tiptap-content p:has(> strong:only-child) { break-after: avoid; }
   .data-table, .personnel-card, .phase-card, .case-study-card { break-inside: avoid; }
   p { orphans: 3; widows: 3; }
 

@@ -211,34 +211,43 @@ const sharedCSS = `
 
   /* Personnel cards */
   .personnel-card {
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 0.5px solid ${C.mediumGray};
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    border: 0.5px solid ${C.mediumGray};
+    border-left: 3px solid ${C.gold};
+    border-radius: 2px;
+    background: ${C.white};
   }
-  .personnel-card:last-child { border-bottom: none; }
+  .personnel-card .p-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
   .personnel-card .p-name {
     font-size: 10.5pt;
     font-weight: 700;
     color: ${C.navy};
-    margin-bottom: 2px;
   }
   .personnel-card .p-role {
-    font-size: 10pt;
+    font-size: 9pt;
+    color: ${C.darkGray};
+    font-style: italic;
+  }
+  .personnel-card .p-detail {
+    font-size: 8.5pt;
     color: ${C.bodyText};
+    line-height: 1.5;
     margin-top: 2px;
   }
-  .personnel-card .p-stats {
-    font-size: 10pt;
-    color: ${C.bodyText};
-    margin-top: 4px;
-  }
-  .personnel-card .p-certs {
-    font-size: 10pt;
-    color: ${C.bodyText};
-    margin-top: 4px;
+  .personnel-card .p-detail .p-label {
+    font-weight: 700;
+    color: ${C.navy};
   }
   .personnel-card .p-bio {
-    margin-top: 6px;
+    margin-top: 4px;
+    font-size: 9pt;
+    line-height: 1.5;
   }
 
   /* Phase cards */
@@ -686,24 +695,20 @@ function renderPersonnelCards(personnel: PersonnelEntry[]): string {
   html += personnel
     .map((person) => {
       const stats = [
-        person.yearsIndustry != null && `Yrs Industry: ${person.yearsIndustry}`,
-        person.yearsCompany != null && `Yrs Company: ${person.yearsCompany}`,
-        person.yearsWithDistech != null && `Yrs Controls: ${person.yearsWithDistech}`,
+        person.yearsIndustry != null ? `<span class="p-label">Industry:</span> ${person.yearsIndustry} yrs` : null,
+        person.yearsCompany != null ? `<span class="p-label">Company:</span> ${person.yearsCompany} yrs` : null,
+        person.yearsWithDistech != null ? `<span class="p-label">Controls:</span> ${person.yearsWithDistech} yrs` : null,
       ].filter(Boolean);
 
       return `
         <div class="personnel-card">
-          <div class="p-name">${esc(person.fullName)}</div>
-          <div class="p-role">${esc(person.roleType)}</div>
-          ${stats.length > 0 ? `<div class="p-stats">${stats.join("  &middot;  ")}</div>` : ""}
-          ${
-            person.certifications.length > 0 || person.specialties.length > 0
-              ? `<div class="p-certs" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                  ${person.certifications.length > 0 ? `<span>Certs: ${esc(person.certifications.join(", "))}</span>` : ""}
-                  ${person.specialties.length > 0 ? `<span>Specialties: ${esc(person.specialties.join(", "))}</span>` : ""}
-                </div>`
-              : ""
-          }
+          <div class="p-header">
+            <span class="p-name">${esc(person.fullName)}</span>
+            <span class="p-role">${esc(person.roleType)}</span>
+          </div>
+          ${stats.length > 0 ? `<div class="p-detail">${stats.join("&ensp;&middot;&ensp;")}</div>` : ""}
+          ${person.certifications.length > 0 ? `<div class="p-detail"><span class="p-label">Certifications:</span> ${esc(person.certifications.join(", "))}</div>` : ""}
+          ${person.specialties.length > 0 ? `<div class="p-detail"><span class="p-label">Specialties:</span> ${esc(person.specialties.join(", "))}</div>` : ""}
           ${person.bio ? `<div class="p-bio tiptap-content">${person.bio}</div>` : ""}
         </div>
       `;

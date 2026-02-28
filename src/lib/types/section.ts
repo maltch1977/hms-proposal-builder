@@ -70,7 +70,7 @@ export interface ReferenceCheckContent {
 }
 
 export interface InterviewPanelContent {
-  // Auto-generated from proposal_team_members — no user input
+  interview_member_ids?: string[];  // personnel IDs selected for interview
   requirement_responses?: Record<string, string>;
 }
 

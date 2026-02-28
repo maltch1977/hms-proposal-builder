@@ -29,6 +29,7 @@ import type {
   CloseoutContent,
   ExecutiveSummaryContent,
   ProjectCostContent,
+  InterviewPanelContent,
 } from "@/lib/types/section";
 import type { FieldAttribution } from "@/lib/utils/derive-field-attributions";
 import type { AttributedSegment } from "@/lib/utils/compute-author-highlights";
@@ -332,7 +333,11 @@ export function SectionRenderer({
       sectionContent = (
         <>
           {guidanceBlock}
-          <InterviewPanel proposalId={proposalId} />
+          <InterviewPanel
+            proposalId={proposalId}
+            content={content as InterviewPanelContent}
+            onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
+          />
         </>
       );
       break;

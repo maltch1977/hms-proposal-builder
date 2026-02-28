@@ -311,6 +311,8 @@ const sharedCSS = `
 
 // ─── Helper: wrap HTML in a full document ────────────────────
 function wrapHtml(body: string, fontBase64: string, extraCSS = ""): string {
+  // Strip en dashes (U+2013 and &ndash;) from all rendered output
+  const cleaned = body.replace(/\u2013/g, "-").replace(/&ndash;/g, "-");
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -321,7 +323,7 @@ function wrapHtml(body: string, fontBase64: string, extraCSS = ""): string {
     ${extraCSS}
   </style>
 </head>
-<body>${body}</body>
+<body>${cleaned}</body>
 </html>`;
 }
 
@@ -453,13 +455,13 @@ export async function renderBodyHtml(
   const bodySections = enabledSections.filter((s) => s.slug !== "cover_page");
 
   const tocEntries = enabledSections
-    .filter((s) => s.slug !== "cover_page" && s.slug !== "table_of_contents" && s.slug !== "interview_panel")
+    .filter((s) => s.slug !== "cover_page" && s.slug !== "table_of_contents")
     .map((s) => ({ slug: s.slug, title: s.displayName }));
 
   const sectionHtmls: string[] = [];
 
   for (const section of bodySections) {
-    const html = renderSection(section, data, images, tocEntries, images.caseStudyPhotos);
+    const html = renderSection(section, data, images, tocEntries, images.caseStudyPhotos, data.interviewPanelPersonnel);
     if (html) sectionHtmls.push(html);
   }
 
@@ -538,7 +540,8 @@ function renderSection(
   data: ProposalDocumentData,
   images: { logoBase64: string; orgChartBase64: string; caseStudyPhotos: string[] },
   tocEntries: { slug: string; title: string }[],
-  caseStudyPhotos: string[]
+  caseStudyPhotos: string[],
+  interviewPanelPersonnel: PersonnelEntry[]
 ): string | null {
   switch (section.slug) {
     case "table_of_contents":
@@ -562,7 +565,7 @@ function renderSection(
     case "reference_check":
       return renderReferenceSection(section.slug, data.references);
     case "interview_panel":
-      return null; // Same content as Personnel Qualifications — skip to avoid duplication
+      return renderInterviewPanelSection(section.slug, interviewPanelPersonnel);
     case "project_cost":
       return renderProjectCostSection(section.slug, data.costData);
     default:

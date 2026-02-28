@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { User } from "lucide-react";
+import { User, Check } from "lucide-react";
 import type { TeamMemberWithPersonnel } from "@/components/sections/key-personnel";
+import type { InterviewPanelContent } from "@/lib/types/section";
 
 interface InterviewPanelProps {
   proposalId: string;
+  content: InterviewPanelContent;
+  onChange: (content: InterviewPanelContent) => void;
 }
 
-export function InterviewPanel({ proposalId }: InterviewPanelProps) {
+export function InterviewPanel({ proposalId, content, onChange }: InterviewPanelProps) {
   const [teamMembers, setTeamMembers] = useState<TeamMemberWithPersonnel[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +38,36 @@ export function InterviewPanel({ proposalId }: InterviewPanelProps) {
     fetchTeam();
   }, [fetchTeam]);
 
+  // Derive selected IDs: if content has explicit list use it, otherwise default to all team members
+  const selectedIds: Set<string> = (() => {
+    if (content.interview_member_ids && content.interview_member_ids.length > 0) {
+      return new Set(content.interview_member_ids);
+    }
+    // Default: all current team members
+    return new Set(teamMembers.map((m) => m.personnel_id));
+  })();
+
+  const toggleMember = (personnelId: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(personnelId)) {
+      next.delete(personnelId);
+    } else {
+      next.add(personnelId);
+    }
+    onChange({ ...content, interview_member_ids: Array.from(next) });
+  };
+
+  const selectAll = () => {
+    onChange({
+      ...content,
+      interview_member_ids: teamMembers.map((m) => m.personnel_id),
+    });
+  };
+
+  const clearAll = () => {
+    onChange({ ...content, interview_member_ids: [] });
+  };
+
   if (loading) {
     return (
       <div className="text-sm text-muted-foreground py-4">
@@ -47,8 +80,8 @@ export function InterviewPanel({ proposalId }: InterviewPanelProps) {
     return (
       <div className="space-y-2">
         <p className="text-xs text-muted-foreground">
-          Auto-generated from Key Personnel. Add team members in the Key
-          Personnel section first.
+          Select which team members will attend the client interview. Add team
+          members in the Key Personnel section first.
         </p>
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">
@@ -59,53 +92,68 @@ export function InterviewPanel({ proposalId }: InterviewPanelProps) {
     );
   }
 
+  const allSelected = teamMembers.every((m) => selectedIds.has(m.personnel_id));
+  const noneSelected = teamMembers.every((m) => !selectedIds.has(m.personnel_id));
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Auto-generated from Key Personnel. This section lists team members who
-        will participate in the client interview.
+        Select which team members will attend the client interview. This does
+        not affect Key Personnel or Personnel Qualifications.
       </p>
-      <div className="rounded-lg border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">
-                Name
-              </th>
-              <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">
-                Title
-              </th>
-              <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">
-                Role
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {teamMembers.map((member) => (
-              <tr
-                key={member.id}
-                className="border-b border-border last:border-0"
-              >
-                <td className="py-2.5 px-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-hms-navy/10 flex-shrink-0">
-                      <User className="h-3.5 w-3.5 text-hms-navy" />
-                    </div>
-                    <span className="font-medium">
-                      {member.personnel.full_name}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-2.5 px-4 text-muted-foreground">
-                  {member.personnel.title}
-                </td>
-                <td className="py-2.5 px-4 text-muted-foreground">
+
+      {/* Select All / Clear All */}
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={selectAll}
+          disabled={allSelected}
+          className="text-xs text-text-tertiary hover:text-accent disabled:opacity-40 transition-colors"
+        >
+          Select All
+        </button>
+        <button
+          type="button"
+          onClick={clearAll}
+          disabled={noneSelected}
+          className="text-xs text-text-tertiary hover:text-accent disabled:opacity-40 transition-colors"
+        >
+          Clear All
+        </button>
+      </div>
+
+      {/* Personnel list */}
+      <div className="divide-y divide-border">
+        {teamMembers.map((member) => {
+          const isSelected = selectedIds.has(member.personnel_id);
+          return (
+            <button
+              key={member.id}
+              type="button"
+              onClick={() => toggleMember(member.personnel_id)}
+              className="flex items-center gap-3 w-full py-2.5 px-1 text-left transition-colors"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-hms-navy/10 flex-shrink-0">
+                <User className="h-3.5 w-3.5 text-hms-navy" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span
+                  className={`text-sm font-medium transition-colors ${
+                    isSelected ? "text-accent" : "text-text-primary"
+                  }`}
+                >
+                  {member.personnel.full_name}
+                </span>
+                <span className="text-xs text-muted-foreground ml-2">
                   {member.role_override || member.personnel.role_type}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </span>
+              </div>
+              {isSelected && (
+                <Check className="h-4 w-4 text-accent flex-shrink-0" />
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

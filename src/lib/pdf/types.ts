@@ -63,4 +63,5 @@ export interface ProposalDocumentData {
   references: ReferenceEntry[];
   costData: { columns: PricingColumn[]; rows: PricingRow[]; notes?: string };
   emrRatings: EmrEntry[];
+  interviewPanelPersonnel: PersonnelEntry[];
 }

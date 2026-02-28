@@ -231,6 +231,48 @@ export async function GET(
       };
     })(),
     emrRatings: emrRatingsData,
+    interviewPanelPersonnel: (() => {
+      // Find interview_panel section and read interview_member_ids from its content
+      const ipSection = (sections || []).find((s) => {
+        const st = (s as unknown as { section_type: SectionType }).section_type;
+        return st.slug === "interview_panel";
+      });
+      const ipContent = (ipSection?.content || {}) as Record<string, unknown>;
+      const memberIds = ipContent.interview_member_ids as string[] | undefined;
+
+      // Build personnel list from already-assembled docData.personnel
+      const allPersonnel = (teamMembers || []).map((m) => {
+        const p = (m as unknown as { personnel: Tables<"personnel"> }).personnel;
+        const kpSection = (sections || []).find((s) => {
+          const st = (s as unknown as { section_type: SectionType }).section_type;
+          return st.slug === "key_personnel";
+        });
+        const memberBios = (kpSection?.content as Record<string, unknown> | null)?.member_bios as Record<string, string> | undefined;
+        return {
+          personnelId: p.id,
+          entry: {
+            fullName: p.full_name,
+            title: p.title,
+            roleType: m.role_override || p.role_type,
+            yearsIndustry: p.years_in_industry,
+            yearsCompany: p.years_at_company,
+            yearsWithDistech: p.years_with_distech,
+            taskDescription: p.task_description,
+            specialties: p.specialties || [],
+            certifications: p.certifications || [],
+            bio: memberBios?.[p.id] ?? p.bio ?? null,
+          },
+        };
+      });
+
+      if (memberIds && memberIds.length > 0) {
+        // Filter to only selected personnel, preserving order
+        const idSet = new Set(memberIds);
+        return allPersonnel.filter((p) => idSet.has(p.personnelId)).map((p) => p.entry);
+      }
+      // Default: all team members (backward compat)
+      return allPersonnel.map((p) => p.entry);
+    })(),
   };
 
   // Debug mode: return assembled data as JSON for verification

@@ -123,8 +123,11 @@ const sharedCSS = `
     margin-bottom: 4px;
   }
   .tiptap-content p {
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     line-height: 1.6;
+  }
+  .tiptap-content + .tiptap-content {
+    margin-top: 6px;
   }
   .tiptap-content ul, .tiptap-content ol {
     margin-left: 18px;

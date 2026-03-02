@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FileUpload } from "@/components/editor/file-upload";
+import { toast } from "sonner";
 import type { CoverPageContent } from "@/lib/types/section";
 import type { Tables } from "@/lib/types/database";
 
@@ -74,10 +75,15 @@ export function CoverPage({ content, onChange, proposalId }: CoverPageProps) {
     formData.append("bucket", "cover-photos");
 
     const res = await fetch("/api/upload", { method: "POST", body: formData });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Upload failed" }));
+      toast.error(err.error || "Failed to upload cover photo");
+      return null;
+    }
 
     const data = await res.json();
     onChange({ ...content, cover_photo_url: data.url });
+    toast.success("Cover photo uploaded");
     return data.url;
   };
 

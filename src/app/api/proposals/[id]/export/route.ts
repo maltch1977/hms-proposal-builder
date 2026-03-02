@@ -115,14 +115,21 @@ export async function GET(
     section_slug: string;
   }>;
 
+  // Read cover page fields from section content (where the editor saves them)
+  const coverSection = (sections || []).find((s) => {
+    const st = (s as unknown as { section_type: SectionType }).section_type;
+    return st.slug === "cover_page";
+  });
+  const coverContent = (coverSection?.content || {}) as Record<string, unknown>;
+
   // Assemble document data — keep image URLs as-is, images.ts resolves to base64 later
   const docData: ProposalDocumentData = {
     title: proposal.title,
-    clientName: proposal.client_name,
-    clientAddress: proposal.client_address,
-    projectLabel: proposal.project_label || "RESPONSE TO RFP",
-    coverTemplate: proposal.cover_template,
-    coverPhotoUrl: proposal.cover_photo_url || undefined,
+    clientName: (coverContent.client_name as string) || proposal.client_name,
+    clientAddress: (coverContent.client_address as string) || proposal.client_address,
+    projectLabel: (coverContent.project_label as string) || proposal.project_label || "RESPONSE TO RFP",
+    coverTemplate: (coverContent.cover_template as "photo" | "no_photo") || proposal.cover_template,
+    coverPhotoUrl: (coverContent.cover_photo_url as string) || proposal.cover_photo_url || undefined,
     logoUrl: org?.logo_url || "/images/hms_logo.png",
     companyName: org?.company_name || org?.name || "HMS Commercial Service, Inc.",
     companyAddress: org?.company_address || undefined,

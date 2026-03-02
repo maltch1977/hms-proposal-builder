@@ -358,51 +358,39 @@ export async function renderCoverHtml(
   if (isPhoto) {
     body = `
       <div style="
-        position: relative;
-        width: 100%;
-        height: 100vh;
-        overflow: hidden;
+        width: 100%; height: 100vh;
+        padding: 72px;
+        display: flex; flex-direction: column; justify-content: space-between;
       ">
-        <img src="${images.coverPhotoBase64}" style="
-          position: absolute; top: 0; left: 0;
-          width: 100%; height: 100%;
-          object-fit: cover;
-        " />
-        <div style="
-          position: absolute; top: 0; left: 0;
-          width: 100%; height: 100%;
-          background: rgba(27, 54, 93, 0.75);
-        "></div>
-        <div style="
-          position: relative;
-          display: flex; flex-direction: column; justify-content: center;
-          height: 100%;
-          padding: 0 72px;
-        ">
-          ${images.logoBase64 ? `<img src="${images.logoBase64}" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 24px;" />` : ""}
+        <div>
+          ${images.logoBase64 ? `<img src="${images.logoBase64}" style="width: 72px; height: 72px; object-fit: contain; margin-bottom: 36px;" />` : ""}
           <div style="font-size: 10pt; font-weight: 700; color: ${C.gold}; letter-spacing: 3px; margin-bottom: 8px;">
             ${esc(data.projectLabel) || "RESPONSE TO RFP"}
           </div>
-          <div style="font-size: 28pt; font-weight: 700; color: ${C.white}; margin-bottom: 12px; line-height: 1.15;">
+          <div style="font-size: 30pt; font-weight: 700; color: ${C.navy}; margin-bottom: 16px; line-height: 1.15;">
             ${esc(data.title)}
           </div>
-          <div style="width: 60px; border-bottom: 3px solid ${C.gold}; margin-bottom: 16px;"></div>
-          <div style="font-size: 14pt; color: ${C.white};">
-            ${esc(data.clientName)}
+          <div style="width: 60px; border-bottom: 3px solid ${C.gold}; margin-bottom: 20px;"></div>
+          <div style="font-size: 14pt; color: ${C.bodyText};">
+            Prepared for: ${esc(data.clientName)}
           </div>
-          ${data.clientAddress ? `<div style="font-size: 10pt; color: rgba(255,255,255,0.8); margin-top: 4px;">${esc(data.clientAddress)}</div>` : ""}
+          ${data.clientAddress ? `<div style="font-size: 10pt; color: ${C.darkGray}; margin-top: 4px;">${esc(data.clientAddress)}</div>` : ""}
+          <img src="${images.coverPhotoBase64}" style="
+            width: 100%;
+            max-height: 320px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-top: 24px;
+          " />
         </div>
-        <div style="
-          position: absolute; bottom: 36px; left: 72px; right: 72px;
-        ">
-          <div style="font-size: 9pt; color: rgba(255,255,255,0.7);">
+        <div style="border-top: 1px solid ${C.mediumGray}; padding-top: 12px;">
+          <div style="font-size: 10pt; font-weight: 700; color: ${C.navy};">
             ${esc(data.companyName) || "HMS Commercial Service, Inc."}
           </div>
-          ${(data.companyAddress || data.companyPhone) ? `
-            <div style="font-size: 8pt; color: rgba(255,255,255,0.5); margin-top: 2px;">
-              ${[data.companyAddress, data.companyPhone, data.companyEmail].filter(Boolean).join("  |  ")}
-            </div>
-          ` : ""}
+          ${data.companyAddress ? `<div style="font-size: 9pt; color: ${C.darkGray}; margin-top: 2px;">${esc(data.companyAddress)}</div>` : ""}
+          ${data.companyPhone ? `<div style="font-size: 9pt; color: ${C.darkGray}; margin-top: 1px;">${esc(data.companyPhone)}</div>` : ""}
+          ${data.companyEmail ? `<div style="font-size: 9pt; color: ${C.darkGray}; margin-top: 1px;">${esc(data.companyEmail)}</div>` : ""}
+          ${data.companyWebsite ? `<div style="font-size: 9pt; color: ${C.darkGray}; margin-top: 1px;">${esc(data.companyWebsite)}</div>` : ""}
         </div>
       </div>
     `;

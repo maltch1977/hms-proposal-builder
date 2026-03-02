@@ -32,47 +32,23 @@ export function CoverPagePdf({
 }: CoverPagePdfProps) {
   if (coverTemplate === "photo" && coverPhotoUrl) {
     return (
-      <Page size="LETTER" style={{ position: "relative" }}>
-        {/* Background photo */}
-        <Image
-          src={coverPhotoUrl}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
-        {/* Dark overlay */}
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(27, 54, 93, 0.75)",
-          }}
-        />
-        {/* Content */}
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            paddingHorizontal: 72,
-            position: "relative",
-          }}
-        >
+      <Page
+        size="LETTER"
+        style={{
+          paddingHorizontal: 72,
+          paddingVertical: 72,
+          justifyContent: "space-between",
+        }}
+      >
+        <View>
           {logoUrl && (
             <Image
               src={logoUrl}
               style={{
-                width: 80,
-                height: 80,
+                width: 72,
+                height: 72,
                 objectFit: "contain",
-                marginBottom: 24,
+                marginBottom: 36,
               }}
             />
           )}
@@ -89,10 +65,10 @@ export function CoverPagePdf({
           </Text>
           <Text
             style={{
-              fontSize: 28,
+              fontSize: 30,
               fontFamily: "Helvetica-Bold",
-              color: COLORS.white,
-              marginBottom: 12,
+              color: COLORS.navy,
+              marginBottom: 16,
             }}
           >
             {title}
@@ -102,41 +78,73 @@ export function CoverPagePdf({
               width: 60,
               borderBottomWidth: 3,
               borderBottomColor: COLORS.gold,
-              marginBottom: 16,
+              marginBottom: 20,
             }}
           />
-          <Text style={{ fontSize: 14, color: COLORS.white }}>
-            {clientName}
+          <Text style={{ fontSize: 14, color: COLORS.bodyText }}>
+            Prepared for: {clientName}
           </Text>
           {clientAddress && (
             <Text
               style={{
                 fontSize: 10,
-                color: "rgba(255,255,255,0.8)",
+                color: COLORS.darkGray,
                 marginTop: 4,
               }}
             >
               {clientAddress}
             </Text>
           )}
+          <Image
+            src={coverPhotoUrl}
+            style={{
+              width: "100%",
+              maxHeight: 320,
+              objectFit: "cover",
+              marginTop: 24,
+              borderRadius: 4,
+            }}
+          />
         </View>
-        {/* Bottom company info */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 36,
-            left: 72,
-            right: 72,
-          }}
-        >
-          <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.7)" }}>
-            {companyName || "HMS Commercial Service, Inc."}
-          </Text>
-          {(companyAddress || companyPhone) && (
-            <Text style={{ fontSize: 8, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
-              {[companyAddress, companyPhone, companyEmail].filter(Boolean).join("  |  ")}
+
+        <View>
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: COLORS.mediumGray,
+              paddingTop: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontFamily: "Helvetica-Bold",
+                color: COLORS.navy,
+              }}
+            >
+              {companyName || "HMS Commercial Service, Inc."}
             </Text>
-          )}
+            {companyAddress && (
+              <Text style={{ fontSize: 9, color: COLORS.darkGray, marginTop: 2 }}>
+                {companyAddress}
+              </Text>
+            )}
+            {companyPhone && (
+              <Text style={{ fontSize: 9, color: COLORS.darkGray, marginTop: 1 }}>
+                {companyPhone}
+              </Text>
+            )}
+            {companyEmail && (
+              <Text style={{ fontSize: 9, color: COLORS.darkGray, marginTop: 1 }}>
+                {companyEmail}
+              </Text>
+            )}
+            {companyWebsite && (
+              <Text style={{ fontSize: 9, color: COLORS.darkGray, marginTop: 1 }}>
+                {companyWebsite}
+              </Text>
+            )}
+          </View>
         </View>
       </Page>
     );

@@ -45,8 +45,8 @@ export function CoverPagePdf({
             <Image
               src={logoUrl}
               style={{
-                width: 72,
-                height: 72,
+                width: 144,
+                height: 144,
                 objectFit: "contain",
                 marginBottom: 36,
               }}

@@ -363,7 +363,7 @@ export async function renderCoverHtml(
         display: flex; flex-direction: column; justify-content: space-between;
       ">
         <div>
-          ${images.logoBase64 ? `<img src="${images.logoBase64}" style="width: 72px; height: 72px; object-fit: contain; margin-bottom: 36px;" />` : ""}
+          ${images.logoBase64 ? `<img src="${images.logoBase64}" style="width: 144px; height: 144px; object-fit: contain; margin-bottom: 36px;" />` : ""}
           <div style="font-size: 10pt; font-weight: 700; color: ${C.gold}; letter-spacing: 3px; margin-bottom: 8px;">
             ${esc(data.projectLabel) || "RESPONSE TO RFP"}
           </div>
@@ -402,7 +402,7 @@ export async function renderCoverHtml(
         display: flex; flex-direction: column; justify-content: space-between;
       ">
         <div>
-          ${images.logoBase64 ? `<img src="${images.logoBase64}" style="width: 72px; height: 72px; object-fit: contain; margin-bottom: 36px;" />` : ""}
+          ${images.logoBase64 ? `<img src="${images.logoBase64}" style="width: 144px; height: 144px; object-fit: contain; margin-bottom: 36px;" />` : ""}
           <div style="font-size: 10pt; font-weight: 700; color: ${C.gold}; letter-spacing: 3px; margin-bottom: 8px;">
             ${esc(data.projectLabel) || "RESPONSE TO RFP"}
           </div>

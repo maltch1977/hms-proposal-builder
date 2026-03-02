@@ -38,7 +38,7 @@ export async function PUT(
   const { id } = await params;
   const body = await request.json();
   const {
-    full_name, title, role_type, years_in_industry, years_at_company,
+    full_name, title, role_type, year_started_in_trade, years_at_company,
     years_with_distech, task_description, bio, specialties, certifications, is_active,
   } = body;
 
@@ -59,7 +59,7 @@ export async function PUT(
   if (full_name !== undefined) updateData.full_name = full_name;
   if (title !== undefined) updateData.title = title;
   if (role_type !== undefined) updateData.role_type = role_type;
-  if (years_in_industry !== undefined) updateData.years_in_industry = years_in_industry || null;
+  if (year_started_in_trade !== undefined) updateData.year_started_in_trade = year_started_in_trade || null;
   if (years_at_company !== undefined) updateData.years_at_company = years_at_company || null;
   if (years_with_distech !== undefined) updateData.years_with_distech = years_with_distech || null;
   if (task_description !== undefined) updateData.task_description = task_description || null;

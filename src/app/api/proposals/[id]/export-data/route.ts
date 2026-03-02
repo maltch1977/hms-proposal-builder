@@ -106,7 +106,7 @@ export async function GET(
         fullName: p.full_name,
         title: p.title,
         roleType: p.role_type,
-        yearsIndustry: p.years_in_industry,
+        yearStartedInTrade: p.year_started_in_trade,
         yearsCompany: p.years_at_company,
         taskDescription: p.task_description,
       };

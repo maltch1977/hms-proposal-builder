@@ -705,7 +705,7 @@ function renderPersonnelCards(personnel: PersonnelEntry[]): string {
   html += personnel
     .map((person) => {
       const stats = [
-        person.yearsIndustry != null ? `<span class="p-label">Industry:</span> ${person.yearsIndustry} yrs` : null,
+        person.yearStartedInTrade != null ? `<span class="p-label">Trade:</span> ${new Date().getFullYear() - person.yearStartedInTrade} yrs` : null,
         person.yearsCompany != null ? `<span class="p-label">Company:</span> ${person.yearsCompany} yrs` : null,
         person.yearsWithDistech != null ? `<span class="p-label">Controls:</span> ${person.yearsWithDistech} yrs` : null,
       ].filter(Boolean);

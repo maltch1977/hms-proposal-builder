@@ -20,8 +20,9 @@ export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, 
   const p = member.personnel;
   const displayRole = member.role_override || p.title;
 
+  const currentYear = new Date().getFullYear();
   const stats = [
-    p.years_in_industry != null && `Yrs Industry: ${p.years_in_industry}`,
+    p.year_started_in_trade != null && `Yrs in Trade: ${currentYear - p.year_started_in_trade}`,
     p.years_at_company != null && `Yrs Company: ${p.years_at_company}`,
     p.years_with_distech != null && `Yrs Controls: ${p.years_with_distech}`,
   ].filter(Boolean);

@@ -25,7 +25,7 @@ interface PersonnelFormProps {
     full_name: string;
     title: string;
     role_type: string;
-    years_in_industry: number | null;
+    year_started_in_trade: number | null;
     years_at_company: number | null;
     years_with_distech: number | null;
     task_description: string | null;
@@ -47,8 +47,8 @@ export function PersonnelForm({
   const [fullName, setFullName] = useState(item?.full_name || "");
   const [title, setTitle] = useState(item?.title || "");
   const [roleType, setRoleType] = useState(item?.role_type || "Other");
-  const [yearsIndustry, setYearsIndustry] = useState(
-    item?.years_in_industry?.toString() || ""
+  const [yearStartedInTrade, setYearStartedInTrade] = useState(
+    item?.year_started_in_trade?.toString() || ""
   );
   const [yearsCompany, setYearsCompany] = useState(
     item?.years_at_company?.toString() || ""
@@ -74,7 +74,7 @@ export function PersonnelForm({
       full_name: fullName,
       title,
       role_type: roleType,
-      years_in_industry: yearsIndustry ? parseInt(yearsIndustry) : null,
+      year_started_in_trade: yearStartedInTrade ? parseInt(yearStartedInTrade) : null,
       years_at_company: yearsCompany ? parseInt(yearsCompany) : null,
       years_with_distech: yearsDistech ? parseInt(yearsDistech) : null,
       task_description: taskDescription || null,
@@ -131,12 +131,13 @@ export function PersonnelForm({
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="p-yi">Years in Industry</Label>
+          <Label htmlFor="p-yi">Year Started in Trade</Label>
           <Input
             id="p-yi"
             type="number"
-            value={yearsIndustry}
-            onChange={(e) => setYearsIndustry(e.target.value)}
+            placeholder="e.g. 2005"
+            value={yearStartedInTrade}
+            onChange={(e) => setYearStartedInTrade(e.target.value)}
           />
         </div>
         <div className="space-y-2">

@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { full_name, title, role_type, years_in_industry, years_at_company, years_with_distech, task_description, bio } = body;
+  const { full_name, title, role_type, year_started_in_trade, years_at_company, years_with_distech, task_description, bio } = body;
 
   if (!full_name || !title) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       full_name,
       title,
       role_type: role_type || "Project Manager",
-      years_in_industry: years_in_industry || null,
+      year_started_in_trade: year_started_in_trade || null,
       years_at_company: years_at_company || null,
       years_with_distech: years_with_distech || null,
       task_description: task_description || null,

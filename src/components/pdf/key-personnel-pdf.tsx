@@ -6,7 +6,7 @@ interface PersonnelEntry {
   fullName: string;
   title: string;
   roleType: string;
-  yearsIndustry: number | null;
+  yearStartedInTrade: number | null;
   yearsCompany: number | null;
   yearsWithDistech: number | null;
   taskDescription: string | null;
@@ -69,8 +69,9 @@ export function KeyPersonnelPdf({ personnel, orgChartImageUrl }: KeyPersonnelPdf
         <Text style={baseStyles.sectionSubtitle}>Personnel Qualifications</Text>
       </View>
       {personnel.map((person, idx) => {
+        const currentYear = new Date().getFullYear();
         const stats = [
-          person.yearsIndustry != null && `Yrs Industry: ${person.yearsIndustry}`,
+          person.yearStartedInTrade != null && `Yrs in Trade: ${currentYear - person.yearStartedInTrade}`,
           person.yearsCompany != null && `Yrs Company: ${person.yearsCompany}`,
           person.yearsWithDistech != null && `Yrs Controls: ${person.yearsWithDistech}`,
         ].filter(Boolean);

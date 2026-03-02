@@ -94,7 +94,7 @@ export function TeamSelector({
     full_name: string;
     title: string;
     role_type: string;
-    years_in_industry?: number;
+    year_started_in_trade?: number;
     years_at_company?: number;
     years_with_distech?: number;
     task_description?: string;
@@ -284,7 +284,7 @@ function InlineCreateForm({
     full_name: string;
     title: string;
     role_type: string;
-    years_in_industry?: number;
+    year_started_in_trade?: number;
     years_at_company?: number;
     years_with_distech?: number;
     task_description?: string;
@@ -294,7 +294,7 @@ function InlineCreateForm({
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [roleType, setRoleType] = useState("Project Manager");
-  const [yearsIndustry, setYearsIndustry] = useState("");
+  const [yearStartedInTrade, setYearStartedInTrade] = useState("");
   const [yearsCompany, setYearsCompany] = useState("");
   const [yearsDistech, setYearsDistech] = useState("");
   const [saving, setSaving] = useState(false);
@@ -307,7 +307,7 @@ function InlineCreateForm({
       full_name: name.trim(),
       title: title.trim(),
       role_type: roleType,
-      years_in_industry: yearsIndustry ? parseInt(yearsIndustry) : undefined,
+      year_started_in_trade: yearStartedInTrade ? parseInt(yearStartedInTrade) : undefined,
       years_at_company: yearsCompany ? parseInt(yearsCompany) : undefined,
       years_with_distech: yearsDistech ? parseInt(yearsDistech) : undefined,
     });
@@ -353,11 +353,12 @@ function InlineCreateForm({
         </div>
         <div className="grid grid-cols-3 gap-2">
           <div>
-            <Label className="text-xs">Yrs Industry</Label>
+            <Label className="text-xs">Year Started</Label>
             <Input
               type="number"
-              value={yearsIndustry}
-              onChange={(e) => setYearsIndustry(e.target.value)}
+              placeholder="e.g. 2005"
+              value={yearStartedInTrade}
+              onChange={(e) => setYearStartedInTrade(e.target.value)}
               className="h-8 text-sm"
             />
           </div>

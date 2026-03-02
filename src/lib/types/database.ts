@@ -320,7 +320,7 @@ export interface Database {
           full_name: string;
           title: string;
           role_type: string;
-          years_in_industry: number | null;
+          year_started_in_trade: number | null;
           years_at_company: number | null;
           years_with_distech: number | null;
           task_description: string | null;
@@ -338,7 +338,7 @@ export interface Database {
           full_name: string;
           title: string;
           role_type: string;
-          years_in_industry?: number | null;
+          year_started_in_trade?: number | null;
           years_at_company?: number | null;
           years_with_distech?: number | null;
           task_description?: string | null;
@@ -354,7 +354,7 @@ export interface Database {
           full_name?: string;
           title?: string;
           role_type?: string;
-          years_in_industry?: number | null;
+          year_started_in_trade?: number | null;
           years_at_company?: number | null;
           years_with_distech?: number | null;
           task_description?: string | null;

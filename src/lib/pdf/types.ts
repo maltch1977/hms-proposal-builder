@@ -11,7 +11,7 @@ export interface PersonnelEntry {
   fullName: string;
   title: string;
   roleType: string;
-  yearsIndustry: number | null;
+  yearStartedInTrade: number | null;
   yearsCompany: number | null;
   yearsWithDistech: number | null;
   taskDescription: string | null;

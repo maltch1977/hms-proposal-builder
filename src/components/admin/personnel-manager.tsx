@@ -118,11 +118,13 @@ export function PersonnelManager() {
             ),
           },
           {
-            key: "years_in_industry",
-            header: "Yrs Industry",
+            key: "year_started_in_trade",
+            header: "Yrs in Trade",
             render: (p) => (
               <span className="text-muted-foreground">
-                {p.years_in_industry ?? "—"}
+                {p.year_started_in_trade
+                  ? new Date().getFullYear() - p.year_started_in_trade
+                  : "—"}
               </span>
             ),
             className: "text-center",

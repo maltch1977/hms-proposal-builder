@@ -438,10 +438,10 @@ export async function generateProposalPdf(
       const text = `Page ${proposalPageNum} of ${totalPages}`;
       const textWidth = helvetica.widthOfTextAtSize(text, pnFontSize);
 
-      // Position in footer area: right-aligned, matching Puppeteer footer padding (54px ≈ 40pt)
+      // Position in footer area: right-aligned, matching Puppeteer footer baseline (54px ≈ 40pt)
       page.drawText(text, {
         x: width - 40 - textWidth,
-        y: 28,
+        y: 20,
         size: pnFontSize,
         font: helvetica,
         color: pnColor,

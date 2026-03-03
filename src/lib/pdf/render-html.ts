@@ -296,17 +296,18 @@ const sharedCSS = `
     flex-direction: column;
     align-items: center;
     margin-bottom: 16px;
+    padding: 16px 0;
   }
   .org-tree-vline {
-    width: 1px;
-    height: 14px;
+    width: 2px;
+    height: 20px;
     background: ${C.mediumGray};
   }
   .org-tree-level {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    gap: 14px;
+    gap: 20px;
   }
   .org-tree-branch {
     display: flex;
@@ -314,11 +315,11 @@ const sharedCSS = `
     align-items: center;
   }
   .org-box {
-    border: 1px solid ${C.mediumGray};
-    border-radius: 4px;
-    padding: 5px 14px;
+    border: 1.5px solid ${C.mediumGray};
+    border-radius: 6px;
+    padding: 8px 20px;
     text-align: center;
-    min-width: 100px;
+    min-width: 140px;
   }
   .org-box--client {
     background: ${C.navy};
@@ -328,14 +329,14 @@ const sharedCSS = `
     color: ${C.white};
   }
   .org-box-name {
-    font-size: 8pt;
+    font-size: 11pt;
     font-weight: 700;
     color: ${C.navy};
   }
   .org-box-title {
-    font-size: 7pt;
+    font-size: 9pt;
     color: ${C.darkGray};
-    margin-top: 1px;
+    margin-top: 2px;
   }
   .org-box--client .org-box-title {
     color: ${C.white};

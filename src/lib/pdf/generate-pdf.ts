@@ -441,7 +441,7 @@ export async function generateProposalPdf(
       // Position in footer area: right-aligned, matching Puppeteer footer baseline (54px ≈ 40pt)
       page.drawText(text, {
         x: width - 40 - textWidth,
-        y: 20,
+        y: 24,
         size: pnFontSize,
         font: helvetica,
         color: pnColor,

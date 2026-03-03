@@ -402,29 +402,24 @@ export async function generateProposalPdf(
       }
     }
 
-    // 13. Stamp page numbers on ALL body pages via pdf-lib.
-    //     This is the single source of truth for page numbering, accounting
-    //     for cover page offset and spliced landscape schedule pages.
+    // 13. Stamp page numbers on all pages (except cover) via pdf-lib.
+    //     Landscape schedule pages already have baked-in page numbers from
+    //     renderScheduleLandscapeHtml, so skip those (detected by dimensions).
     const helvetica = await mergedPdf.embedFont(StandardFonts.Helvetica);
     const pnFontSize = 5.25; // ~7px
     const pnColor = rgb(0.4, 0.4, 0.4); // #666666
     const coverOffset = hasCover ? 1 : 0;
+    const totalMergedPages = mergedPdf.getPageCount();
 
-    for (let i = 0; i < bodyPageCount; i++) {
-      const proposalPageNum =
-        scheduleInsertAfterIdx >= 0 && i > scheduleInsertAfterIdx
-          ? i + 1 + scheduleLandscapePageCount
-          : i + 1;
-
-      const mergedIdx =
-        coverOffset +
-        i +
-        (scheduleInsertAfterIdx >= 0 && i > scheduleInsertAfterIdx
-          ? scheduleLandscapePageCount
-          : 0);
-
+    for (let mergedIdx = coverOffset; mergedIdx < totalMergedPages; mergedIdx++) {
       const page = mergedPdf.getPage(mergedIdx);
-      const { width } = page.getSize();
+      const { width, height } = page.getSize();
+
+      // Skip landscape schedule pages (they have their own baked-in footer)
+      if (width > height) continue;
+
+      // Calculate the correct proposal page number for this merged page
+      const proposalPageNum = mergedIdx - coverOffset + 1;
 
       const text = `Page ${proposalPageNum} of ${totalPages}`;
       const textWidth = helvetica.widthOfTextAtSize(text, pnFontSize);

@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { StatusBadge } from "@/components/proposals/status-badge";
 import { AutoSaveIndicator } from "@/components/editor/auto-save-indicator";
-import { ArrowLeft, Eye, Download, Loader2, ClipboardCheck, ChevronDown, CircleCheck, CircleAlert, Circle, History, LogOut } from "lucide-react";
+import { ArrowLeft, Eye, Download, Loader2, ClipboardCheck, ChevronDown, CircleCheck, CircleAlert, Circle, History } from "lucide-react";
 import type { Tables } from "@/lib/types/database";
 import type { ProposalStatus } from "@/lib/utils/constants";
 import type { RFPRequirement, RequirementMapping } from "@/lib/ai/types";
@@ -77,17 +77,11 @@ export function EditorTopbar({
   return (
     <header className="flex h-14 items-center justify-between border-b border-border/60 bg-card/80 backdrop-blur-xl px-5">
       <div className="flex items-center gap-3">
-        {isCollaboratorOnly ? (
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onSignOut}>
-            <LogOut className="h-4 w-4" />
+        <Link href="/proposals">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-        ) : (
-          <Link href="/proposals">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-        )}
+        </Link>
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <h1 className="text-[15px] tracking-[-0.01em] font-semibold text-foreground truncate max-w-[300px]">

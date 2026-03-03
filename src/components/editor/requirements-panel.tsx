@@ -48,9 +48,14 @@ export const RequirementsPanel = forwardRef<HTMLDivElement, RequirementsPanelPro
       if (!deadline) return null;
       const deadlineDate = new Date(deadline);
       if (isNaN(deadlineDate.getTime())) return null;
+      // Compare calendar dates only (strip time) to avoid timezone off-by-one.
+      // "2026-03-05" parsed as UTC midnight; local time could be behind UTC,
+      // so normalize both to local midnight for an accurate day count.
       const now = new Date();
-      const diffMs = deadlineDate.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const deadlineLocal = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
+      const diffMs = deadlineLocal.getTime() - todayLocal.getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
       return {
         days: diffDays,
         date: deadlineDate.toLocaleDateString("en-US", {

@@ -7,6 +7,7 @@ import type {
   CaseStudyEntry,
   ReferenceEntry,
   EmrEntry,
+  OrgChartNode,
 } from "./types";
 import type { PricingColumn, PricingRow } from "@/lib/types/section";
 
@@ -290,6 +291,55 @@ const sharedCSS = `
     max-width: 100%;
     object-fit: contain;
   }
+  .org-tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .org-tree-vline {
+    width: 1px;
+    height: 14px;
+    background: ${C.mediumGray};
+  }
+  .org-tree-level {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 14px;
+  }
+  .org-tree-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .org-box {
+    border: 1px solid ${C.mediumGray};
+    border-radius: 4px;
+    padding: 5px 14px;
+    text-align: center;
+    min-width: 100px;
+  }
+  .org-box--client {
+    background: ${C.navy};
+    border-color: ${C.navy};
+  }
+  .org-box--client .org-box-name {
+    color: ${C.white};
+  }
+  .org-box-name {
+    font-size: 8pt;
+    font-weight: 700;
+    color: ${C.navy};
+  }
+  .org-box-title {
+    font-size: 7pt;
+    color: ${C.darkGray};
+    margin-top: 1px;
+  }
+  .org-box--client .org-box-title {
+    color: ${C.white};
+  }
 
   /* Divider */
   .divider {
@@ -538,7 +588,7 @@ function renderSection(
     case "firm_background":
       return renderFirmBackgroundSection(section.slug, section, data.caseStudies, caseStudyPhotos);
     case "key_personnel":
-      return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64, qualificationsPersonnel);
+      return renderKeyPersonnelSection(section.slug, section, data.personnel, images.orgChartBase64, qualificationsPersonnel, data.orgChartHierarchy, data.clientName);
     case "project_schedule":
       return renderProjectScheduleSection(section.slug, section);
     case "site_logistics":
@@ -630,20 +680,76 @@ function renderFirmBackgroundSection(
   return sectionWrap(slug, "Firm Background & Experience", content);
 }
 
+// ─── Org Chart Tree (HTML) ───────────────────────────────────
+interface HierarchyTreeNode {
+  node: OrgChartNode;
+  children: HierarchyTreeNode[];
+}
+
+function buildHierarchyTree(nodes: OrgChartNode[]): HierarchyTreeNode[] {
+  const childrenMap = new Map<string | null, OrgChartNode[]>();
+  for (const node of nodes) {
+    const parentId = node.parentId;
+    if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+    childrenMap.get(parentId)!.push(node);
+  }
+
+  function build(parentId: string | null): HierarchyTreeNode[] {
+    const children = childrenMap.get(parentId) || [];
+    return children.map((node) => ({
+      node,
+      children: build(node.id),
+    }));
+  }
+
+  return build(null);
+}
+
+function renderOrgTreeLevel(nodes: HierarchyTreeNode[]): string {
+  if (nodes.length === 0) return "";
+  return `<div class="org-tree-level">${nodes
+    .map(
+      (tn) => `
+      <div class="org-tree-branch">
+        <div class="org-box">
+          <div class="org-box-name">${esc(tn.node.fullName)}</div>
+          <div class="org-box-title">${esc(tn.node.title)}</div>
+        </div>
+        ${tn.children.length > 0 ? `<div class="org-tree-vline"></div>${renderOrgTreeLevel(tn.children)}` : ""}
+      </div>`
+    )
+    .join("")}</div>`;
+}
+
+function renderHierarchyOrgChart(hierarchy: OrgChartNode[], clientName: string): string {
+  const tree = buildHierarchyTree(hierarchy);
+  return `
+    <div class="org-tree">
+      <div class="org-box org-box--client">
+        <div class="org-box-name">${esc(clientName)}</div>
+      </div>
+      <div class="org-tree-vline"></div>
+      ${renderOrgTreeLevel(tree)}
+    </div>`;
+}
+
 // ─── Key Personnel ───────────────────────────────────────────
 function renderKeyPersonnelSection(
   slug: string,
   section: { content: Record<string, unknown> },
   personnel: PersonnelEntry[],
   orgChartBase64: string,
-  qualificationsPersonnel: PersonnelEntry[]
+  qualificationsPersonnel: PersonnelEntry[],
+  orgChartHierarchy?: OrgChartNode[],
+  clientName?: string
 ): string {
-  const showOrgChart =
-    (section.content.org_chart_mode || "upload") === "upload";
+  const orgChartMode = (section.content.org_chart_mode as string) || "upload";
 
   // Page 1: Organization Chart
   let orgContent = "";
-  if (showOrgChart && orgChartBase64) {
+  if (orgChartMode === "hierarchy" && orgChartHierarchy && orgChartHierarchy.length > 0) {
+    orgContent += renderHierarchyOrgChart(orgChartHierarchy, clientName || "HMS Client");
+  } else if (orgChartMode === "upload" && orgChartBase64) {
     orgContent += `
       <div class="org-chart-image">
         <img src="${orgChartBase64}" />

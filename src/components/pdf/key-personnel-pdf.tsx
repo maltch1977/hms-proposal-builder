@@ -1,6 +1,7 @@
 import { View, Text, Image } from "@react-pdf/renderer";
 import { COLORS, baseStyles } from "./pdf-styles";
 import { HtmlContent } from "./html-to-pdf";
+import type { OrgChartNode } from "@/lib/pdf/types";
 
 interface PersonnelEntry {
   fullName: string;
@@ -15,17 +16,117 @@ interface PersonnelEntry {
   bio: string | null;
 }
 
+interface TreeNode {
+  node: OrgChartNode;
+  children: TreeNode[];
+}
+
 interface KeyPersonnelPdfProps {
   personnel: PersonnelEntry[];
   orgChartImageUrl?: string;
+  orgChartHierarchy?: OrgChartNode[];
+  clientName?: string;
 }
 
-export function KeyPersonnelPdf({ personnel, orgChartImageUrl }: KeyPersonnelPdfProps) {
+function buildTree(nodes: OrgChartNode[]): TreeNode[] {
+  const childrenMap = new Map<string | null, OrgChartNode[]>();
+  for (const node of nodes) {
+    const parentId = node.parentId;
+    if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+    childrenMap.get(parentId)!.push(node);
+  }
+
+  function build(parentId: string | null): TreeNode[] {
+    const children = childrenMap.get(parentId) || [];
+    return children.map((node) => ({
+      node,
+      children: build(node.id),
+    }));
+  }
+
+  return build(null);
+}
+
+function OrgChartBox({ name, title, isClient }: { name: string; title?: string; isClient?: boolean }) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: isClient ? COLORS.navy : COLORS.mediumGray,
+        backgroundColor: isClient ? COLORS.navy : COLORS.white,
+        borderRadius: 4,
+        alignItems: "center",
+        minWidth: 100,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 8,
+          fontFamily: "Helvetica-Bold",
+          color: isClient ? COLORS.white : COLORS.navy,
+        }}
+      >
+        {name}
+      </Text>
+      {title && (
+        <Text style={{ fontSize: 7, color: isClient ? COLORS.white : COLORS.darkGray, marginTop: 1 }}>
+          {title}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function VerticalLine() {
+  return (
+    <View style={{ width: 1, height: 12, backgroundColor: COLORS.mediumGray, alignSelf: "center" }} />
+  );
+}
+
+function OrgTreeLevel({ nodes }: { nodes: TreeNode[] }) {
+  if (nodes.length === 0) return null;
+
+  return (
+    <View style={{ alignItems: "center" }}>
+      <View style={{ flexDirection: "row", justifyContent: "center", gap: 12 }}>
+        {nodes.map((treeNode) => (
+          <View key={treeNode.node.id} style={{ alignItems: "center" }}>
+            <OrgChartBox name={treeNode.node.fullName} title={treeNode.node.title} />
+            {treeNode.children.length > 0 && (
+              <>
+                <VerticalLine />
+                <OrgTreeLevel nodes={treeNode.children} />
+              </>
+            )}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function HierarchyOrgChart({ hierarchy, clientName }: { hierarchy: OrgChartNode[]; clientName: string }) {
+  const tree = buildTree(hierarchy);
+
+  return (
+    <View style={{ alignItems: "center", marginBottom: 16 }}>
+      <OrgChartBox name={clientName} isClient />
+      <VerticalLine />
+      <OrgTreeLevel nodes={tree} />
+    </View>
+  );
+}
+
+export function KeyPersonnelPdf({ personnel, orgChartImageUrl, orgChartHierarchy, clientName }: KeyPersonnelPdfProps) {
   return (
     <View>
-      {/* Org Chart — custom image or text fallback */}
+      {/* Org Chart — hierarchy tree, uploaded image, or text fallback */}
       <Text style={baseStyles.sectionSubtitle}>Organization Chart</Text>
-      {orgChartImageUrl ? (
+      {orgChartHierarchy && orgChartHierarchy.length > 0 ? (
+        <HierarchyOrgChart hierarchy={orgChartHierarchy} clientName={clientName || "HMS Client"} />
+      ) : orgChartImageUrl ? (
         <View style={{ marginBottom: 16, alignItems: "center" }}>
           <Image
             src={orgChartImageUrl}

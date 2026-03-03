@@ -55,6 +55,13 @@ interface EmrEntry {
   rating: number;
 }
 
+interface OrgChartNode {
+  id: string;
+  fullName: string;
+  title: string;
+  parentId: string | null;
+}
+
 export interface ProposalDocumentData {
   title: string;
   clientName: string;
@@ -75,6 +82,7 @@ export interface ProposalDocumentData {
   references: ReferenceEntry[];
   costData: { columns: PricingColumn[]; rows: PricingRow[]; notes?: string };
   emrRatings: EmrEntry[];
+  orgChartHierarchy?: OrgChartNode[];
 }
 
 interface ProposalDocumentProps {
@@ -189,6 +197,8 @@ export function ProposalDocument({ data }: ProposalDocumentProps) {
                         ? (section.content.org_chart_image as string | undefined) || undefined
                         : undefined
                     }
+                    orgChartHierarchy={data.orgChartHierarchy}
+                    clientName={data.clientName}
                   />
                 </SectionPage>
               );

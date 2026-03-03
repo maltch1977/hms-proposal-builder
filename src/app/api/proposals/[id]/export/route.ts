@@ -273,6 +273,25 @@ export async function GET(
       }
       return allPersonnel.map((p) => p.entry);
     })(),
+    orgChartHierarchy: (() => {
+      const kpSection = (sections || []).find((s) => {
+        const st = (s as unknown as { section_type: SectionType }).section_type;
+        return st.slug === "key_personnel";
+      });
+      const mode = ((kpSection?.content as Record<string, unknown> | null)?.org_chart_mode as string) || "upload";
+      if (mode !== "hierarchy") return undefined;
+
+      return (teamMembers || []).map((m) => {
+        const p = (m as unknown as { personnel: Tables<"personnel"> }).personnel;
+        const hp = m.hierarchy_position as { parent_id?: string } | null;
+        return {
+          id: m.id,
+          fullName: p.full_name,
+          title: m.role_override || p.title,
+          parentId: hp?.parent_id || null,
+        };
+      });
+    })(),
     interviewPanelPersonnel: (() => {
       // Find interview_panel section and read interview_member_ids from its content
       const ipSection = (sections || []).find((s) => {

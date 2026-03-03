@@ -43,6 +43,13 @@ export interface EmrEntry {
   rating: number;
 }
 
+export interface OrgChartNode {
+  id: string;
+  fullName: string;
+  title: string;
+  parentId: string | null;
+}
+
 export interface ProposalDocumentData {
   title: string;
   clientName: string;
@@ -65,6 +72,7 @@ export interface ProposalDocumentData {
   emrRatings: EmrEntry[];
   qualificationsPersonnel: PersonnelEntry[];
   interviewPanelPersonnel: InterviewPanelEntry[];
+  orgChartHierarchy?: OrgChartNode[];
 }
 
 export interface InterviewPanelEntry extends PersonnelEntry {

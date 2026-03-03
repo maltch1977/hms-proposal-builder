@@ -14,6 +14,7 @@ interface PersonnelEntry {
   specialties: string[];
   certifications: string[];
   bio: string | null;
+  description?: string | null;
 }
 
 interface TreeNode {
@@ -203,7 +204,14 @@ export function KeyPersonnelPdf({ personnel, orgChartImageUrl, orgChartHierarchy
               </Text>
             )}
 
-            {/* Task Description / Responsibilities */}
+            {/* Optional description */}
+            {person.description && (
+              <Text style={{ fontSize: 8, color: COLORS.darkGray, marginTop: 3 }}>
+                {person.description}
+              </Text>
+            )}
+
+            {/* Task Description / Responsibilities (Interview Panel only) */}
             {person.taskDescription && (
               <Text style={{ fontSize: 8, color: COLORS.darkGray, marginTop: 3 }}>
                 Responsibilities: {person.taskDescription}

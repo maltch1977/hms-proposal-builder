@@ -247,6 +247,7 @@ export async function GET(
       const kpContent = (kpSection?.content || {}) as Record<string, unknown>;
       const qualIds = kpContent.qualifications_member_ids as string[] | undefined;
       const memberBios = kpContent.member_bios as Record<string, string> | undefined;
+      const memberDescs = kpContent.member_descriptions as Record<string, string> | undefined;
 
       const allPersonnel = (teamMembers || []).map((m) => {
         const p = (m as unknown as { personnel: Tables<"personnel"> }).personnel;
@@ -259,10 +260,11 @@ export async function GET(
             yearStartedInTrade: p.year_started_in_trade,
             yearsCompany: p.years_at_company,
             yearsWithDistech: p.years_with_distech,
-            taskDescription: p.task_description,
+            taskDescription: null, // Responsibilities not shown in Key Personnel (shown in Interview Panel only)
             specialties: p.specialties || [],
             certifications: p.certifications || [],
             bio: memberBios?.[p.id] ?? p.bio ?? null,
+            description: memberDescs?.[p.id] || null,
           },
         };
       });

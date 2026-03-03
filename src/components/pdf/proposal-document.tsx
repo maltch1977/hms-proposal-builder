@@ -31,6 +31,7 @@ interface PersonnelEntry {
   specialties: string[];
   certifications: string[];
   bio: string | null;
+  description?: string | null;
 }
 
 interface CaseStudyEntry {

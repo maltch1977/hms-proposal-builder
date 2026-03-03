@@ -335,6 +335,7 @@ export function KeyPersonnel({
               const proposalBio = content?.member_bios?.[member.personnel_id];
               const isLibraryFallback = proposalBio === undefined && !!member.personnel.bio;
               const bioValue = proposalBio ?? member.personnel.bio ?? "";
+              const descValue = content?.member_descriptions?.[member.personnel_id] ?? "";
               const isInQual = qualMemberIds.has(member.personnel_id);
 
               return (
@@ -369,6 +370,16 @@ export function KeyPersonnel({
                           member_bios: {
                             ...(content?.member_bios || {}),
                             [member.personnel_id]: html,
+                          },
+                        });
+                      }}
+                      description={descValue}
+                      onDescriptionChange={(val) => {
+                        onChange?.({
+                          ...content,
+                          member_descriptions: {
+                            ...(content?.member_descriptions || {}),
+                            [member.personnel_id]: val,
                           },
                         });
                       }}

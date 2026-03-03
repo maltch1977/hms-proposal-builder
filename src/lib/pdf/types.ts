@@ -18,6 +18,7 @@ export interface PersonnelEntry {
   specialties: string[];
   certifications: string[];
   bio: string | null;
+  description?: string | null; // optional short description (Key Personnel only)
 }
 
 export interface CaseStudyEntry {

@@ -11,12 +11,14 @@ interface PersonnelBioCardProps {
   member: TeamMemberWithPersonnel;
   bio: string;
   onBioChange: (html: string) => void;
+  description?: string;
+  onDescriptionChange?: (value: string) => void;
   isLibraryFallback?: boolean;
   onSaveToLibrary?: () => void;
   onRoleChange?: (role: string) => void;
 }
 
-export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, onSaveToLibrary, onRoleChange }: PersonnelBioCardProps) {
+export function PersonnelBioCard({ member, bio, onBioChange, description, onDescriptionChange, isLibraryFallback, onSaveToLibrary, onRoleChange }: PersonnelBioCardProps) {
   const p = member.personnel;
   const displayRole = member.role_override || p.title;
 
@@ -98,11 +100,15 @@ export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, 
         </p>
       )}
 
-      {/* Task Description / Responsibilities */}
-      {p.task_description && (
-        <p className="text-xs text-muted-foreground">
-          <span className="font-medium">Responsibilities:</span> {p.task_description}
-        </p>
+      {/* Optional short description — shows under person's name in Key Personnel PDF */}
+      {onDescriptionChange && (
+        <textarea
+          defaultValue={description || ""}
+          placeholder="Optional description (shows under name in PDF)"
+          onBlur={(e) => onDescriptionChange(e.target.value.trim())}
+          rows={2}
+          className="w-full text-xs text-foreground bg-transparent border border-border rounded-md px-2 py-1.5 resize-none focus:ring-1 focus:ring-ring focus:outline-none placeholder:text-muted-foreground/50"
+        />
       )}
 
       {/* Certs + Specialties */}

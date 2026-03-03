@@ -93,9 +93,13 @@ function headerTemplate(
   `;
 }
 
-function footerTemplate(companyName: string): string {
-  // Page numbers are NOT rendered here — they're stamped by pdf-lib after merge
-  // so that landscape schedule pages (spliced in) don't break the numbering.
+function footerTemplate(companyName: string, totalPages?: number): string {
+  // When totalPages is provided, render page numbers using Puppeteer's built-in
+  // <span class="pageNumber"> so they sit on the exact same line as the company name.
+  // Post-schedule-splice pages get corrected by pdf-lib after merge.
+  const pageText = totalPages != null
+    ? `Page <span class="pageNumber"></span> of ${totalPages}`
+    : "";
   return `
     <div style="
       width: 100%;
@@ -110,7 +114,7 @@ function footerTemplate(companyName: string): string {
       color: #666666;
     ">
       <span>${companyName || "HMS Commercial Service, Inc."}</span>
-      <span></span>
+      <span>${pageText}</span>
     </div>
   `;
 }
@@ -359,7 +363,7 @@ export async function generateProposalPdf(
       });
     }, pageMap);
 
-    const bodyFtr = footerTemplate(footerCompanyName);
+    const bodyFtr = footerTemplate(footerCompanyName, totalPages);
     const bodyPdfBuffer = await bodyPage.pdf({
       format: "Letter",
       printBackground: true,
@@ -410,42 +414,43 @@ export async function generateProposalPdf(
       }
     }
 
-    // 13. Stamp correct page numbers on all body pages via pdf-lib
-    //     (Puppeteer footer doesn't include page numbers — landscape splice breaks sequential numbering)
-    const helvetica = await mergedPdf.embedFont(StandardFonts.Helvetica);
-    const pnFontSize = 5.25; // ~7px to match footer font-size
-    const pnColor = rgb(0.4, 0.4, 0.4); // #666666
-    const coverOffset = hasCover ? 1 : 0;
+    // 13. Fix page numbers on body pages AFTER the schedule splice point.
+    //     Puppeteer renders correct sequential page numbers in the footer, but
+    //     pages after the landscape schedule splice have wrong numbers because
+    //     N extra pages were inserted. Cover a ~60x10pt white rect over the
+    //     Puppeteer-rendered page text, then redraw with the correct number.
+    if (scheduleInsertAfterIdx >= 0 && scheduleLandscapePageCount > 0) {
+      const helvetica = await mergedPdf.embedFont(StandardFonts.Helvetica);
+      const pnFontSize = 5.25; // ~7px to match footer font-size
+      const pnColor = rgb(0.4, 0.4, 0.4); // #666666
+      const coverOffset = hasCover ? 1 : 0;
 
-    for (let i = 0; i < bodyPageCount; i++) {
-      // Correct proposal page number accounting for spliced landscape pages
-      const proposalPageNum =
-        scheduleInsertAfterIdx >= 0 && i > scheduleInsertAfterIdx
-          ? i + 1 + scheduleLandscapePageCount
-          : i + 1;
+      for (let i = scheduleInsertAfterIdx + 1; i < bodyPageCount; i++) {
+        const proposalPageNum = i + 1 + scheduleLandscapePageCount;
 
-      // Index in the merged PDF (landscape pages shift later body pages)
-      const mergedIdx =
-        coverOffset +
-        i +
-        (scheduleInsertAfterIdx >= 0 && i > scheduleInsertAfterIdx
-          ? scheduleLandscapePageCount
-          : 0);
+        const mergedIdx = coverOffset + i + scheduleLandscapePageCount;
+        const page = mergedPdf.getPage(mergedIdx);
+        const { width } = page.getSize();
 
-      const page = mergedPdf.getPage(mergedIdx);
-      const { width } = page.getSize();
+        const text = `Page ${proposalPageNum} of ${totalPages}`;
+        const textWidth = helvetica.widthOfTextAtSize(text, pnFontSize);
 
-      const text = `Page ${proposalPageNum} of ${totalPages}`;
-      const textWidth = helvetica.widthOfTextAtSize(text, pnFontSize);
-
-      // Position in footer area: right-aligned, matching Puppeteer footer baseline (54px ≈ 40pt)
-      page.drawText(text, {
-        x: width - 40 - textWidth,
-        y: 26,
-        size: pnFontSize,
-        font: helvetica,
-        color: pnColor,
-      });
+        // White-out the Puppeteer-rendered page number, then redraw correct one
+        page.drawRectangle({
+          x: width - 40 - 60,
+          y: 18,
+          width: 60,
+          height: 12,
+          color: rgb(1, 1, 1),
+        });
+        page.drawText(text, {
+          x: width - 40 - textWidth,
+          y: 21,
+          size: pnFontSize,
+          font: helvetica,
+          color: pnColor,
+        });
+      }
     }
 
     mergedPdf.setTitle(data.title);

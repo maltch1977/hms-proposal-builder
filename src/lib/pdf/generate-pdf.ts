@@ -437,15 +437,15 @@ export async function generateProposalPdf(
 
         // White-out the Puppeteer-rendered page number, then redraw correct one
         page.drawRectangle({
-          x: width - 40 - 60,
-          y: 18,
-          width: 60,
-          height: 12,
+          x: width - 40 - 100,
+          y: 14,
+          width: 100,
+          height: 20,
           color: rgb(1, 1, 1),
         });
         page.drawText(text, {
           x: width - 40 - textWidth,
-          y: 21,
+          y: 22,
           size: pnFontSize,
           font: helvetica,
           color: pnColor,

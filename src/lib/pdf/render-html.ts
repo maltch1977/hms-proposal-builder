@@ -179,13 +179,6 @@ const sharedCSS = `
   .data-table tbody tr:nth-child(even) {
     background: ${C.lightGray};
   }
-  .data-table .totals-row td {
-    background: ${C.navy};
-    color: ${C.white};
-    font-weight: 700;
-    font-size: 10pt;
-    padding: 6px 8px;
-  }
 
   /* Case study cards */
   .case-study-card {
@@ -909,15 +902,6 @@ function renderProjectCostSection(slug: string, costData: {
     return sectionWrap(slug, "Project Cost", "");
   }
 
-  // Compute totals
-  const columnTotals: Record<string, number> = {};
-  for (const col of costData.columns) {
-    columnTotals[col.id] = costData.rows.reduce(
-      (sum, row) => sum + parseDollar(row.values[col.id]),
-      0
-    );
-  }
-
   const headerCells = costData.columns
     .map(
       (col) =>
@@ -940,13 +924,6 @@ function renderProjectCostSection(slug: string, costData: {
     )
     .join("");
 
-  const totalsCells = costData.columns
-    .map(
-      (col) =>
-        `<td class="text-right" style="flex: 1;">${formatCurrency(columnTotals[col.id])}</td>`
-    )
-    .join("");
-
   let content = `
     <table class="data-table">
       <thead>
@@ -957,10 +934,6 @@ function renderProjectCostSection(slug: string, costData: {
       </thead>
       <tbody>
         ${bodyRows}
-        <tr class="totals-row">
-          <td style="flex: 2;">TOTAL</td>
-          ${totalsCells}
-        </tr>
       </tbody>
     </table>
   `;

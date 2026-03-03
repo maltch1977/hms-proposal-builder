@@ -93,6 +93,14 @@ export function RichTextEditor({
     },
   });
 
+  // Sync external content changes (e.g. Polish button, AI rewrites)
+  useEffect(() => {
+    if (!editor) return;
+    if (editor.getHTML() !== content) {
+      editor.commands.setContent(content);
+    }
+  }, [editor, content]);
+
   // Update highlight decorations when segments change
   useEffect(() => {
     if (!editor) return;

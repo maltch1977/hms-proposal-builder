@@ -113,7 +113,7 @@ function footerTemplate(companyName: string, totalPages?: number): string {
       padding-top: 4px;
       color: #666666;
     ">
-      <span>${companyName || "HMS Commercial Service, Inc."}</span>
+      <span></span>
       <span>${pageText}</span>
     </div>
   `;

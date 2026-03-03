@@ -68,8 +68,23 @@ export function RichTextEditor({
   const [highlightsEnabled, setHighlightsEnabled] = useState(true);
   const [requirementMarksEnabled, setRequirementMarksEnabled] = useState(true);
 
-  // Track whether the latest content change came from user typing (local)
-  // so we don't round-trip it back through setContent and reset the cursor.
+  // ⚠️  CRITICAL — DO NOT REMOVE isLocalUpdate OR CHANGE THIS PATTERN  ⚠️
+  //
+  // TipTap's setContent() resets the cursor and drops keystrokes.
+  // The content prop round-trips on every keystroke:
+  //   user types → onUpdate → onChange → parent setState → new content prop
+  //
+  // Without isLocalUpdate, the useEffect below calls setContent() on that
+  // round-tripped value, killing the cursor mid-typing.  This bug has been
+  // reported and "fixed" THREE TIMES.  The pattern below is the correct fix:
+  //   1. onUpdate sets isLocalUpdate = true before calling onChange
+  //   2. The useEffect skips setContent when isLocalUpdate is true
+  //   3. External changes (Polish, AI rewrite) don't set the flag, so
+  //      setContent fires only for those
+  //
+  // If you need to programmatically update content from outside this
+  // component, just pass a new `content` prop — the useEffect handles it.
+  // Do NOT call editor.commands.setContent() directly from parent code.
   const isLocalUpdate = useRef(false);
 
   const editor = useEditor({
@@ -87,7 +102,7 @@ export function RichTextEditor({
     content,
     editable: !disabled,
     onUpdate: ({ editor }) => {
-      isLocalUpdate.current = true;
+      isLocalUpdate.current = true; // ← marks this as a local edit (see warning above)
       onChange(editor.getHTML());
     },
     editorProps: {
@@ -98,8 +113,8 @@ export function RichTextEditor({
     },
   });
 
-  // Sync only external content changes (e.g. Polish button, AI rewrites).
-  // Skip when the change originated from user typing in this editor.
+  // Sync ONLY external content changes (Polish button, AI rewrites).
+  // See the warning above — do not remove the isLocalUpdate guard.
   useEffect(() => {
     if (!editor) return;
     if (isLocalUpdate.current) {

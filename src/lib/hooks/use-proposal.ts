@@ -155,7 +155,6 @@ export function useProposal(proposalId: string) {
         prev.map((s) => (s.id === sectionId ? { ...s, ...updates } : s))
       );
       pendingRef.current[sectionId] = { updates, changeType };
-      setSaving(true);
 
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {

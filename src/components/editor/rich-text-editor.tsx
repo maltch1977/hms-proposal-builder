@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -68,6 +68,10 @@ export function RichTextEditor({
   const [highlightsEnabled, setHighlightsEnabled] = useState(true);
   const [requirementMarksEnabled, setRequirementMarksEnabled] = useState(true);
 
+  // Track whether the latest content change came from user typing (local)
+  // so we don't round-trip it back through setContent and reset the cursor.
+  const isLocalUpdate = useRef(false);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -83,6 +87,7 @@ export function RichTextEditor({
     content,
     editable: !disabled,
     onUpdate: ({ editor }) => {
+      isLocalUpdate.current = true;
       onChange(editor.getHTML());
     },
     editorProps: {
@@ -93,11 +98,16 @@ export function RichTextEditor({
     },
   });
 
-  // Sync external content changes (e.g. Polish button, AI rewrites)
+  // Sync only external content changes (e.g. Polish button, AI rewrites).
+  // Skip when the change originated from user typing in this editor.
   useEffect(() => {
     if (!editor) return;
+    if (isLocalUpdate.current) {
+      isLocalUpdate.current = false;
+      return;
+    }
     if (editor.getHTML() !== content) {
-      editor.commands.setContent(content);
+      editor.commands.setContent(content, false);
     }
   }, [editor, content]);
 

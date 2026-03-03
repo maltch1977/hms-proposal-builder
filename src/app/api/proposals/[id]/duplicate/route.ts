@@ -42,6 +42,7 @@ export async function POST(
       status: "draft",
       cover_template: original.cover_template,
       cover_photo_url: original.cover_photo_url,
+      deadline: original.deadline,
       metadata: original.metadata,
     })
     .select()
@@ -103,6 +104,7 @@ export async function POST(
       proposal_id: duplicate.id,
       past_project_id: cs.past_project_id,
       order_index: cs.order_index,
+      photo_overrides: cs.photo_overrides,
     }));
 
     await supabase.from("proposal_case_studies").insert(duplicatedStudies);
@@ -137,6 +139,7 @@ export async function POST(
       type: ci.type,
       amount: ci.amount,
       order_index: ci.order_index,
+      cost_library_item_id: ci.cost_library_item_id,
     }));
 
     await supabase.from("proposal_cost_items").insert(duplicatedCosts);

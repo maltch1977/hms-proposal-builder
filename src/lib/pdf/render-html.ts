@@ -705,6 +705,7 @@ function renderPersonnelCards(personnel: PersonnelEntry[]): string {
             <span class="p-role">${esc(person.roleType)}</span>
           </div>
           ${stats.length > 0 ? `<div class="p-detail">${stats.join("&ensp;&middot;&ensp;")}</div>` : ""}
+          ${person.taskDescription ? `<div class="p-detail"><span class="p-label">Responsibilities:</span> ${esc(person.taskDescription)}</div>` : ""}
           ${person.certifications.length > 0 ? `<div class="p-detail"><span class="p-label">Certifications:</span> ${esc(person.certifications.join(", "))}</div>` : ""}
           ${person.specialties.length > 0 ? `<div class="p-detail"><span class="p-label">Specialties:</span> ${esc(person.specialties.join(", "))}</div>` : ""}
           ${person.bio ? `<div class="p-bio tiptap-content">${person.bio}</div>` : ""}

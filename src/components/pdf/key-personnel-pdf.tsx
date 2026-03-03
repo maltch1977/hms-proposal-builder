@@ -102,6 +102,13 @@ export function KeyPersonnelPdf({ personnel, orgChartImageUrl }: KeyPersonnelPdf
               </Text>
             )}
 
+            {/* Task Description / Responsibilities */}
+            {person.taskDescription && (
+              <Text style={{ fontSize: 8, color: COLORS.darkGray, marginTop: 3 }}>
+                Responsibilities: {person.taskDescription}
+              </Text>
+            )}
+
             {/* Certs & Specialties */}
             {(person.certifications.length > 0 || person.specialties.length > 0) && (
               <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 2, gap: 12 }}>

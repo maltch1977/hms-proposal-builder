@@ -98,6 +98,13 @@ export function PersonnelBioCard({ member, bio, onBioChange, isLibraryFallback, 
         </p>
       )}
 
+      {/* Task Description / Responsibilities */}
+      {p.task_description && (
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium">Responsibilities:</span> {p.task_description}
+        </p>
+      )}
+
       {/* Certs + Specialties */}
       {(p.certifications.length > 0 || p.specialties.length > 0) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">

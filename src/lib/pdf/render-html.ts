@@ -555,7 +555,7 @@ export async function renderScheduleLandscapeHtml(
             justify-content: space-between; align-items: center;
             border-top: 0.5px solid #E0E0E0; padding-top: 4px; color: #666666;
           ">
-            <span>${esc(pageInfo.footerCompanyName) || "HMS Commercial Service, Inc."}</span>
+            <span></span>
             <span>Page ${pageNum} of ${pageInfo.totalPages}</span>
           </div>
         </div>

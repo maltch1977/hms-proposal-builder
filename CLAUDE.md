@@ -1,11 +1,17 @@
 # CLAUDE.md — Project Instructions for AI Assistants
 
-## Critical Rules
+## Critical Rules — AUTO-SAVE / KEYSTROKE DROPPING
 
-### DO NOT break the TipTap content sync pattern in rich-text-editor.tsx
+**This bug has regressed FOUR times. These rules are non-negotiable.**
 
-The `isLocalUpdate` ref + useEffect pattern in `rich-text-editor.tsx` prevents
-keystrokes from being dropped. This has regressed THREE times. The rules:
+The client has repeatedly lost the ability to type in the editor because
+auto-save disrupts the TipTap editor state. Three independent mechanisms
+must ALL remain intact to prevent this:
+
+### 1. isLocalUpdate guard in rich-text-editor.tsx
+
+The `isLocalUpdate` ref + useEffect pattern prevents `setContent()` from
+firing on content the user just typed (which resets the cursor).
 
 - **Never** call `editor.commands.setContent()` on content that came from user typing
 - **Never** remove the `isLocalUpdate` ref guard from the content sync useEffect
@@ -13,12 +19,22 @@ keystrokes from being dropped. This has regressed THREE times. The rules:
 - To update content externally (Polish, AI rewrite), just pass a new `content` prop
 - The `onUpdate` callback MUST set `isLocalUpdate.current = true` before `onChange`
 
-### DO NOT set `setSaving(true)` on every keystroke in use-proposal.ts
+### 2. No setSaving(true) on every keystroke in use-proposal.ts
 
-The `setSaving(true)` call must only happen inside `flushSave()`, not in the
-debounced content path of `updateSection()`. Setting it on every keystroke
-causes the entire editor tree to re-render, compounding the dropped keystroke
-problem above.
+`setSaving(true)` must only happen inside `flushSave()`, not in the debounced
+content path of `updateSection()`. Setting it on every keystroke re-renders the
+entire editor tree.
+
+### 3. No setSections() inside flushSave's API response handler in use-proposal.ts
+
+`flushSave()` must NOT call `setSections()` after the API call succeeds.
+The optimistic update already happened in `updateSection()` at keystroke time.
+By the time the API response arrives, the user may have typed more — writing
+the stale `updates` object back into state overwrites newer content and resets
+the cursor. This was the root cause of the 4th regression.
+
+**If you are modifying use-proposal.ts or rich-text-editor.tsx, re-read
+these rules before saving your changes.**
 
 ## Tech Stack
 

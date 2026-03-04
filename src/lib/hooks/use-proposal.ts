@@ -76,6 +76,16 @@ export function useProposal(proposalId: string) {
   const maxWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSaveCompleteRef = useRef<(() => void) | null>(null);
 
+  // ⚠️  CRITICAL — READ BEFORE MODIFYING  ⚠️
+  //
+  // flushSave persists debounced content to the server. It must NOT call
+  // setSections() on success. The optimistic update already happened in
+  // updateSection() at keystroke time. By the time the API response arrives
+  // (100-500ms later), the user may have typed more. Writing the stale
+  // `updates` object back into state overwrites newer content, resets the
+  // cursor, and drops keystrokes.
+  //
+  // This bug has been reported and fixed FOUR TIMES. See CLAUDE.md.
   const flushSave = useCallback(async () => {
     const pending = { ...pendingRef.current };
     pendingRef.current = {};
@@ -92,10 +102,7 @@ export function useProposal(proposalId: string) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-          // Do NOT call setSections here — the optimistic update already happened
-          // in updateSection(). By the time this API response arrives, the user may
-          // have typed more, so `updates` is stale. Writing it back into state would
-          // overwrite newer content and cause cursor resets / lost keystrokes.
+          // ❌ Do NOT add setSections() here. See warning above.
         } catch (err) {
           console.error("Failed to update section:", err);
         }

@@ -28,7 +28,15 @@ const C = {
 // rendering. Keeps the inner text, removes the tag and all attributes so
 // marks never affect PDF styling (bold, underline, background, etc.).
 function stripMarks(html: string): string {
-  return html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
+  let result = html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
+  // Convert bold-only paragraphs to <h3> so they render as navy sub-headings.
+  // Handles: <p><strong>…</strong></p>, <p><u><strong>…</strong></u></p>,
+  //          <p><strong><u>…</u></strong></p>
+  result = result
+    .replace(/<p><strong>([\s\S]*?)<\/strong><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><u><strong>([\s\S]*?)<\/strong><\/u><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><strong><u>([\s\S]*?)<\/u><\/strong><\/p>/g, "<h3>$1</h3>");
+  return result;
 }
 
 // ─── Font Embedding ──────────────────────────────────────────
@@ -88,9 +96,7 @@ const sharedCSS = `
   section.pdf-section { break-before: page; }
   section.pdf-section:first-child { break-before: auto; }
   h2, h3, .section-title-bar { break-after: avoid; }
-  .tiptap-content p:has(> strong:only-child),
-  .tiptap-content p:has(> u:only-child > strong:only-child),
-  .tiptap-content p:has(> strong:only-child > u:only-child) { break-after: avoid; color: ${C.navy}; font-size: 10.5pt; }
+  /* Bold-only paragraphs are promoted to <h3> in stripMarks() preprocessing */
   .data-table, .personnel-card, .phase-card, .case-study-card { break-inside: avoid; }
   p { orphans: 3; widows: 3; }
 

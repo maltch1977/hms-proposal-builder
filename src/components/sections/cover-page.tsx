@@ -130,7 +130,7 @@ export function CoverPage({ content, onChange, proposalId }: CoverPageProps) {
           <Input
             id="cover-label"
             placeholder="RESPONSE TO RFP"
-            value={content.project_label || "RESPONSE TO RFP"}
+            value={content.project_label ?? ""}
             onChange={(e) => update("project_label", e.target.value)}
           />
         </div>

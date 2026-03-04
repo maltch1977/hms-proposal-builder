@@ -82,11 +82,27 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
   switch (node.tag) {
     case "p": {
       // Bold-only paragraphs render as navy sub-headings (matches h3 style)
-      const isBoldOnly =
-        node.children?.length === 1 &&
-        node.children[0].type === "element" &&
-        (node.children[0].tag === "strong" || node.children[0].tag === "b");
+      // Handle: <p><strong>…</strong></p>, <p><u><strong>…</strong></u></p>,
+      //         <p><strong><u>…</u></strong></p>
+      const isBoldOnly = (() => {
+        if (node.children?.length !== 1 || node.children[0].type !== "element") return false;
+        let inner = node.children[0];
+        // Unwrap <u> wrapping <strong>
+        if (inner.tag === "u" && inner.children?.length === 1 && inner.children[0].type === "element") {
+          inner = inner.children[0];
+        }
+        return inner.tag === "strong" || inner.tag === "b";
+      })();
       if (isBoldOnly) {
+        // Extract the deepest text content, skipping <strong>/<u> wrappers
+        let textNode = node.children![0];
+        while (textNode.type === "element" && (textNode.tag === "strong" || textNode.tag === "b" || textNode.tag === "u") && textNode.children?.length) {
+          if (textNode.children.length === 1 && textNode.children[0].type === "element") {
+            textNode = textNode.children[0];
+          } else {
+            break;
+          }
+        }
         return (
           <Text
             key={key}
@@ -98,7 +114,7 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
               marginBottom: 4,
             }}
           >
-            {node.children![0].children?.map((c, j) => renderNode(c, j))}
+            {textNode.children?.map((c, j) => renderNode(c, j))}
           </Text>
         );
       }

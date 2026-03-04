@@ -73,6 +73,7 @@ export function useProposal(proposalId: string) {
   // Debounced save: collect the latest updates per section and flush after 800ms of inactivity
   const pendingRef = useRef<Record<string, { updates: { content?: Json; is_enabled?: boolean; order_index?: number; library_item_id?: string | null }; changeType?: "human" | "ai" }>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSaveCompleteRef = useRef<(() => void) | null>(null);
 
   const flushSave = useCallback(async () => {
@@ -86,16 +87,15 @@ export function useProposal(proposalId: string) {
       entries.map(async ([sectionId, { updates, changeType }]) => {
         try {
           const payload = changeType ? { ...updates, _changeType: changeType } : updates;
-          const res = await fetch(`/api/sections/${sectionId}`, {
+          await fetch(`/api/sections/${sectionId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-          if (res.ok) {
-            setSections((prev) =>
-              prev.map((s) => (s.id === sectionId ? { ...s, ...updates } : s))
-            );
-          }
+          // Do NOT call setSections here — the optimistic update already happened
+          // in updateSection(). By the time this API response arrives, the user may
+          // have typed more, so `updates` is stale. Writing it back into state would
+          // overwrite newer content and cause cursor resets / lost keystrokes.
         } catch (err) {
           console.error("Failed to update section:", err);
         }
@@ -109,6 +109,7 @@ export function useProposal(proposalId: string) {
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (maxWaitRef.current) clearTimeout(maxWaitRef.current);
       // Fire synchronously on unmount
       const pending = Object.entries(pendingRef.current);
       if (pending.length > 0) {
@@ -156,10 +157,21 @@ export function useProposal(proposalId: string) {
       );
       pendingRef.current[sectionId] = { updates, changeType };
 
+      // Debounce: reset on each keystroke, fires after 800ms of inactivity
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
+        if (maxWaitRef.current) { clearTimeout(maxWaitRef.current); maxWaitRef.current = null; }
         flushSave();
       }, 800);
+
+      // Max-wait: guarantee a save at least every 5s during continuous typing
+      if (!maxWaitRef.current) {
+        maxWaitRef.current = setTimeout(() => {
+          maxWaitRef.current = null;
+          if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+          flushSave();
+        }, 5000);
+      }
 
       return true;
     },

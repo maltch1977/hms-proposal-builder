@@ -23,6 +23,14 @@ const C = {
   darkGray: "#666666",
 };
 
+// ─── HTML Sanitization ──────────────────────────────────────
+// Strip <mark> tags (requirement marks from TipTap) from HTML before PDF
+// rendering. Keeps the inner text, removes the tag and all attributes so
+// marks never affect PDF styling (bold, underline, background, etc.).
+function stripMarks(html: string): string {
+  return html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
+}
+
 // ─── Font Embedding ──────────────────────────────────────────
 let fontBase64Cache: string | null = null;
 
@@ -639,7 +647,7 @@ function renderTocSection(slug: string, entries: { slug: string; title: string }
 
 // ─── HTML Content Section (Introduction, Executive Summary, Closeout) ──
 function renderHtmlContentSection(slug: string, title: string, html: string): string {
-  return sectionWrap(slug, title, `<div class="tiptap-content">${html}</div>`);
+  return sectionWrap(slug, title, `<div class="tiptap-content">${stripMarks(html)}</div>`);
 }
 
 // ─── Firm Background ─────────────────────────────────────────
@@ -650,7 +658,7 @@ function renderFirmBackgroundSection(
   caseStudyPhotos: string[]
 ): string {
   const narrative = (section.content.narrative as string) || "";
-  let content = `<div class="tiptap-content">${narrative}</div>`;
+  let content = `<div class="tiptap-content">${stripMarks(narrative)}</div>`;
 
   if (caseStudies.length > 0) {
     content += `
@@ -809,7 +817,7 @@ function renderPersonnelCards(personnel: PersonnelEntry[]): string {
           ${person.taskDescription ? `<div class="p-detail"><span class="p-label">Responsibilities:</span> ${esc(person.taskDescription)}</div>` : ""}
           ${person.certifications.length > 0 ? `<div class="p-detail"><span class="p-label">Certifications:</span> ${esc(person.certifications.join(", "))}</div>` : ""}
           ${person.specialties.length > 0 ? `<div class="p-detail"><span class="p-label">Specialties:</span> ${esc(person.specialties.join(", "))}</div>` : ""}
-          ${person.bio ? `<div class="p-bio tiptap-content">${person.bio}</div>` : ""}
+          ${person.bio ? `<div class="p-bio tiptap-content">${stripMarks(person.bio)}</div>` : ""}
         </div>
       `;
     })
@@ -922,7 +930,7 @@ function renderSiteLogisticsSection(
   emrRatings: EmrEntry[]
 ): string {
   const body = (section.content.body as string) || "";
-  let content = `<div class="tiptap-content">${body}</div>`;
+  let content = `<div class="tiptap-content">${stripMarks(body)}</div>`;
 
   if (emrRatings.length > 0) {
     const sorted = [...emrRatings].sort((a, b) => a.year - b.year);
@@ -951,9 +959,9 @@ function renderQaqcSection(slug: string, section: {
   const comm = (section.content.commissioning as string) || "";
 
   const content = `
-    <div class="tiptap-content">${qa}</div>
-    <div class="tiptap-content">${qc}</div>
-    <div class="tiptap-content">${comm}</div>
+    <div class="tiptap-content">${stripMarks(qa)}</div>
+    <div class="tiptap-content">${stripMarks(qc)}</div>
+    <div class="tiptap-content">${stripMarks(comm)}</div>
   `;
 
   return sectionWrap(slug, "QA/QC/Commissioning", content);

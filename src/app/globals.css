@@ -198,18 +198,21 @@ mark.requirement-mark {
 }
 
 mark.requirement-mark--addressed {
-  border-color: #22c55e;
+  border-color: transparent;
 }
 
 mark.requirement-mark--needs-input {
-  border-color: #f59e0b;
+  border-color: transparent;
 }
 
+/* Only show green/amber underlines when the requirement card is active (clicked) */
 mark.requirement-mark--addressed.requirement-mark--highlighted {
+  border-color: #22c55e;
   border-bottom-width: 3px;
 }
 
 mark.requirement-mark--needs-input.requirement-mark--highlighted {
+  border-color: #f59e0b;
   border-bottom-width: 3px;
 }
 

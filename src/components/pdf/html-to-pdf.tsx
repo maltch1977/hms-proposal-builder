@@ -200,9 +200,14 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
   }
 }
 
+// Strip <mark> tags (requirement marks from TipTap) — keeps inner text, removes styling
+function stripMarks(html: string): string {
+  return html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
+}
+
 export function HtmlContent({ html }: { html: string }) {
   if (!html) return null;
-  const nodes = parseHtml(html);
+  const nodes = parseHtml(stripMarks(html));
   return (
     <View>
       {nodes.map((node, i) => renderNode(node, i))}

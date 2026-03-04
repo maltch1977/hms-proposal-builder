@@ -22,6 +22,16 @@ function parseDollar(value: string | undefined): number {
   return Number(value.replace(/[^0-9.-]/g, "")) || 0;
 }
 
+function isNumericValue(value: string): boolean {
+  return /[0-9]/.test(value);
+}
+
+function formatCellValue(value: string | undefined): string {
+  if (!value) return "";
+  if (isNumericValue(value)) return formatCurrency(parseDollar(value));
+  return value;
+}
+
 export function ProjectCostPdf({ columns, rows, notes }: ProjectCostPdfProps) {
   if (columns.length === 0 && rows.length === 0) return null;
 
@@ -65,9 +75,7 @@ export function ProjectCostPdf({ columns, rows, notes }: ProjectCostPdfProps) {
                   { width: colWidth, textAlign: "right", flex: 1 },
                 ]}
               >
-                {row.values[col.id]
-                  ? formatCurrency(parseDollar(row.values[col.id]))
-                  : ""}
+                {formatCellValue(row.values[col.id])}
               </Text>
             ))}
           </View>

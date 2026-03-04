@@ -88,7 +88,7 @@ const sharedCSS = `
   section.pdf-section { break-before: page; }
   section.pdf-section:first-child { break-before: auto; }
   h2, h3, .section-title-bar { break-after: avoid; }
-  .tiptap-content p:has(> strong:only-child) { break-after: avoid; }
+  .tiptap-content p:has(> strong:only-child) { break-after: avoid; color: ${C.navy}; font-size: 10.5pt; }
   .data-table, .personnel-card, .phase-card, .case-study-card { break-inside: avoid; }
   p { orphans: 3; widows: 3; }
 
@@ -1033,7 +1033,7 @@ function renderProjectCostSection(slug: string, costData: {
         ${costData.columns
           .map(
             (col) =>
-              `<td class="text-right" style="flex: 1;">${row.values[col.id] ? formatCurrency(parseDollar(row.values[col.id])) : ""}</td>`
+              `<td class="text-right" style="flex: 1;">${formatCellValue(row.values[col.id])}</td>`
           )
           .join("")}
       </tr>`
@@ -1079,4 +1079,14 @@ function formatCurrency(amount: number): string {
 function parseDollar(value: string | undefined): number {
   if (!value) return 0;
   return Number(value.replace(/[^0-9.-]/g, "")) || 0;
+}
+
+function isNumericValue(value: string): boolean {
+  return /[0-9]/.test(value);
+}
+
+function formatCellValue(value: string | undefined): string {
+  if (!value) return "";
+  if (isNumericValue(value)) return formatCurrency(parseDollar(value));
+  return esc(value);
 }

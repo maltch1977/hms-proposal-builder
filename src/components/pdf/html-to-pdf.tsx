@@ -80,12 +80,34 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
   const children = node.children?.map((child, i) => renderNode(child, i));
 
   switch (node.tag) {
-    case "p":
+    case "p": {
+      // Bold-only paragraphs render as navy sub-headings (matches h3 style)
+      const isBoldOnly =
+        node.children?.length === 1 &&
+        node.children[0].type === "element" &&
+        (node.children[0].tag === "strong" || node.children[0].tag === "b");
+      if (isBoldOnly) {
+        return (
+          <Text
+            key={key}
+            style={{
+              fontSize: 10.5,
+              fontFamily: "Helvetica-Bold",
+              color: COLORS.navy,
+              marginTop: 8,
+              marginBottom: 4,
+            }}
+          >
+            {node.children![0].children?.map((c, j) => renderNode(c, j))}
+          </Text>
+        );
+      }
       return (
         <Text key={key} style={{ marginBottom: 6, fontSize: 10, lineHeight: 1.6 }}>
           {children}
         </Text>
       );
+    }
     case "h2":
       return (
         <View key={key} minPresenceAhead={0.15}>

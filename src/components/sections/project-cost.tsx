@@ -1,6 +1,23 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { CSS } from "@dnd-kit/utilities";
 import { FileUpload } from "@/components/editor/file-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +56,84 @@ const COLUMN_TYPE_LABELS: Record<string, string> = {
   value_engineering: "Value Engineering",
 };
 
+function SortableRow({
+  row,
+  columns,
+  rowCount,
+  onDescription,
+  onCellChange,
+  onRemove,
+}: {
+  row: PricingRow;
+  columns: PricingColumn[];
+  rowCount: number;
+  onDescription: (description: string) => void;
+  onCellChange: (colId: string, value: string) => void;
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: row.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`border-b border-border last:border-0 ${isDragging ? "opacity-50 bg-muted/50" : ""}`}
+    >
+      <td className="py-1.5 px-1 w-8">
+        <button
+          type="button"
+          className="cursor-grab text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing transition-colors p-1"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+      </td>
+      <td className="py-1.5 px-3">
+        <Input
+          value={row.description}
+          onChange={(e) => onDescription(e.target.value)}
+          placeholder="Description..."
+          className="h-8 text-sm border-0 bg-transparent p-0 focus:ring-0"
+        />
+      </td>
+      {columns.map((col) => (
+        <td key={col.id} className="py-1.5 px-3">
+          <Input
+            value={row.values[col.id] || ""}
+            onChange={(e) => onCellChange(col.id, e.target.value)}
+            placeholder="$0.00"
+            className="h-8 text-sm text-right border-0 bg-transparent p-0 focus:ring-0"
+          />
+        </td>
+      ))}
+      <td className="py-1.5 px-1">
+        {rowCount > 1 && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-muted-foreground hover:text-destructive p-1"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 export function ProjectCost({ content, onChange, proposalId }: ProjectCostProps) {
   const columns = content.columns?.length ? content.columns : DEFAULT_COLUMNS;
   const rows = content.rows?.length ? content.rows : DEFAULT_ROWS;
@@ -51,6 +146,28 @@ export function ProjectCost({ content, onChange, proposalId }: ProjectCostProps)
     },
     [content, onChange]
   );
+
+  // --- Drag-and-drop sensors ---
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = rows.findIndex((r) => r.id === active.id);
+    const newIndex = rows.findIndex((r) => r.id === over.id);
+
+    const newOrder = [...rows];
+    const [moved] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, moved);
+
+    update({ rows: newOrder });
+  };
 
   // --- Column management ---
   const [addColType, setAddColType] = useState<"alternate" | "value_engineering">("alternate");
@@ -164,97 +281,89 @@ export function ProjectCost({ content, onChange, proposalId }: ProjectCostProps)
           </div>
         </div>
 
-        <div className="rounded-lg border border-border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left py-2.5 px-3 font-medium text-muted-foreground min-w-[200px]">
-                  Line Item
-                </th>
-                {columns.map((col) => (
-                  <th
-                    key={col.id}
-                    className="text-right py-2.5 px-3 font-medium text-muted-foreground min-w-[150px]"
-                  >
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Input
-                        value={col.name}
-                        onChange={(e) => handleRenameColumn(col.id, e.target.value)}
-                        className="h-6 text-xs text-right font-medium border-0 bg-transparent p-0 focus:ring-0 max-w-[120px]"
-                      />
-                      {col.type !== "base" && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveColumn(col.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-muted-foreground/60 font-normal">
-                      {COLUMN_TYPE_LABELS[col.type]}
-                    </span>
-                  </th>
-                ))}
-                <th className="w-10" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-b border-border last:border-0">
-                  <td className="py-1.5 px-3">
-                    <Input
-                      value={row.description}
-                      onChange={(e) => handleRowDescription(row.id, e.target.value)}
-                      placeholder="Description..."
-                      className="h-8 text-sm border-0 bg-transparent p-0 focus:ring-0"
-                    />
-                  </td>
-                  {columns.map((col) => (
-                    <td key={col.id} className="py-1.5 px-3">
-                      <Input
-                        value={row.values[col.id] || ""}
-                        onChange={(e) => handleCellChange(row.id, col.id, e.target.value)}
-                        placeholder="$0.00"
-                        className="h-8 text-sm text-right border-0 bg-transparent p-0 focus:ring-0"
-                      />
-                    </td>
-                  ))}
-                  <td className="py-1.5 px-1">
-                    {rows.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveRow(row.id)}
-                        className="text-muted-foreground hover:text-destructive p-1"
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
+        >
+          <SortableContext
+            items={rows.map((r) => r.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="rounded-lg border border-border overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="w-8" />
+                    <th className="text-left py-2.5 px-3 font-medium text-muted-foreground min-w-[200px]">
+                      Line Item
+                    </th>
+                    {columns.map((col) => (
+                      <th
+                        key={col.id}
+                        className="text-right py-2.5 px-3 font-medium text-muted-foreground min-w-[150px]"
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-border bg-muted/30">
-                <td className="py-2.5 px-3 text-sm font-semibold text-foreground">
-                  Total
-                </td>
-                {columns.map((col) => {
-                  const total = getColumnTotal(col.id);
-                  return (
-                    <td key={col.id} className="py-2.5 px-3 text-sm font-semibold text-right text-foreground">
-                      {total > 0
-                        ? `$${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : "—"}
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Input
+                            value={col.name}
+                            onChange={(e) => handleRenameColumn(col.id, e.target.value)}
+                            className="h-6 text-xs text-right font-medium border-0 bg-transparent p-0 focus:ring-0 max-w-[120px]"
+                          />
+                          {col.type !== "base" && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveColumn(col.id)}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground/60 font-normal">
+                          {COLUMN_TYPE_LABELS[col.type]}
+                        </span>
+                      </th>
+                    ))}
+                    <th className="w-10" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <SortableRow
+                      key={row.id}
+                      row={row}
+                      columns={columns}
+                      rowCount={rows.length}
+                      onDescription={(desc) => handleRowDescription(row.id, desc)}
+                      onCellChange={(colId, val) => handleCellChange(row.id, colId, val)}
+                      onRemove={() => handleRemoveRow(row.id)}
+                    />
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-border bg-muted/30">
+                    <td />
+                    <td className="py-2.5 px-3 text-sm font-semibold text-foreground">
+                      Total
                     </td>
-                  );
-                })}
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+                    {columns.map((col) => {
+                      const total = getColumnTotal(col.id);
+                      return (
+                        <td key={col.id} className="py-2.5 px-3 text-sm font-semibold text-right text-foreground">
+                          {total > 0
+                            ? `$${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : "—"}
+                        </td>
+                      );
+                    })}
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </SortableContext>
+        </DndContext>
 
         <Button variant="ghost" size="sm" className="mt-2 h-8 gap-1.5 text-muted-foreground" onClick={handleAddRow}>
           <Plus className="h-3.5 w-3.5" />

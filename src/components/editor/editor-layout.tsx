@@ -693,7 +693,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     const rules: string[] = [];
     for (const r of rfpRequirements) {
       if (r.auto_filled) {
-        rules.push(`mark[data-req-id="${r.id}"],mark[data-req-id="req_${r.id}"]{border-color:#22c55e !important;}`);
+        rules.push(`mark[data-req-id="${r.id}"].requirement-mark--highlighted,mark[data-req-id="req_${r.id}"].requirement-mark--highlighted{border-color:#22c55e !important;}`);
       }
     }
     return rules.join("");

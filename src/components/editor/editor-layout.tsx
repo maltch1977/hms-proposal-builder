@@ -35,6 +35,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     loading,
     saving,
     updateProposal,
+    patchProposalLocal,
     updateSection,
     reorderSections,
     addSection,
@@ -383,6 +384,22 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
       await updateSection(sectionId, supabaseUpdates);
     },
     [updateSection]
+  );
+
+  // Title change: update header + sidebar instantly, debounce API save
+  const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleTitleChange = useCallback(
+    (title: string) => {
+      // Immediate optimistic update for header and sidebar
+      patchProposalLocal({ title });
+      window.dispatchEvent(new CustomEvent("proposal-updated", { detail: { id: proposalId, title } }));
+      // Debounce the actual DB save
+      if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
+      titleTimerRef.current = setTimeout(() => {
+        updateProposal({ title });
+      }, 600);
+    },
+    [proposalId, patchProposalLocal, updateProposal]
   );
 
   const doExport = useCallback(async () => {
@@ -781,7 +798,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
           requirementMappings={requirementMappings}
           onRequirementDone={handleSetRequirementDone}
           proposalTitle={proposal?.title}
-          onTitleChange={(title) => updateProposal({ title })}
+          onTitleChange={handleTitleChange}
         />
         {showChanges && (
           <ChangesPanel

@@ -49,6 +49,9 @@ export function useProposal(proposalId: string) {
 
   const updateProposal = useCallback(
     async (updates: Partial<Proposal>) => {
+      // Optimistic: update local state immediately so UI reflects changes
+      setProposal((prev) => (prev ? { ...prev, ...updates } : prev));
+      window.dispatchEvent(new CustomEvent("proposal-updated", { detail: { id: proposalId, ...updates } }));
       setSaving(true);
       try {
         const res = await fetch(`/api/proposals/${proposalId}/update`, {
@@ -57,7 +60,6 @@ export function useProposal(proposalId: string) {
           body: JSON.stringify(updates),
         });
         if (res.ok) {
-          setProposal((prev) => (prev ? { ...prev, ...updates } : prev));
           setSaving(false);
           return true;
         }
@@ -288,6 +290,8 @@ export function useProposal(proposalId: string) {
     toggleSection,
     addSection,
     deleteSection,
+    patchProposalLocal: (updates: Partial<Proposal>) =>
+      setProposal((prev) => (prev ? { ...prev, ...updates } : prev)),
     refetch: fetchProposal,
     onSaveCompleteRef,
   };

@@ -97,6 +97,18 @@ export function Sidebar() {
     }
   }, [pathname, fetchProposals]);
 
+  // Update sidebar in real time when a proposal is edited (e.g. title change)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id, ...updates } = (e as CustomEvent).detail;
+      setProposals((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+      );
+    };
+    window.addEventListener("proposal-updated", handler);
+    return () => window.removeEventListener("proposal-updated", handler);
+  }, []);
+
   // Drag-to-resize handlers
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {

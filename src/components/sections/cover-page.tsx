@@ -120,8 +120,8 @@ export function CoverPage({ content, onChange, proposalId, proposalTitle }: Cove
         <Label htmlFor="cover-project-name">Project Name</Label>
         <Input
           id="cover-project-name"
-          placeholder={proposalTitle || "Project name (shown as main title on cover)"}
-          value={content.project_name ?? ""}
+          placeholder="Project name (shown as main title on cover)"
+          value={content.project_name ?? proposalTitle ?? ""}
           onChange={(e) => update("project_name", e.target.value)}
         />
       </div>

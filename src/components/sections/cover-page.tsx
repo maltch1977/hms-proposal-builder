@@ -21,7 +21,20 @@ interface CoverPageProps {
 export function CoverPage({ content, onChange, proposalId }: CoverPageProps) {
   const [suggestedPhotos, setSuggestedPhotos] = useState<CoverPhoto[]>([]);
   const [allPhotos, setAllPhotos] = useState<CoverPhoto[]>([]);
+  const [proposalTitle, setProposalTitle] = useState("");
   const supabase = createClient();
+
+  // Fetch the proposal title so the Project Name field shows it as placeholder
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("proposals")
+        .select("title")
+        .eq("id", proposalId)
+        .single();
+      if (data?.title) setProposalTitle(data.title);
+    })();
+  }, [proposalId, supabase]);
 
   const fetchSuggestedPhotos = useCallback(async () => {
     // Fetch proposal metadata
@@ -119,7 +132,7 @@ export function CoverPage({ content, onChange, proposalId }: CoverPageProps) {
         <Label htmlFor="cover-project-name">Project Name</Label>
         <Input
           id="cover-project-name"
-          placeholder="Project name (shown as main title on cover)"
+          placeholder={proposalTitle || "Project name (shown as main title on cover)"}
           value={content.project_name ?? ""}
           onChange={(e) => update("project_name", e.target.value)}
         />

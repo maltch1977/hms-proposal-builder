@@ -292,12 +292,40 @@ export async function generateProposalPdf(
       pageCounts[slug] = tempDoc.getPageCount();
     }
 
+    // 7b. Measure org chart page count within key_personnel for sub-TOC entry
+    let orgChartPageCount = 1;
+    if (pageCounts["key_personnel"] && pageCounts["key_personnel"] > 1) {
+      await bodyPage.evaluate(() => {
+        document.querySelectorAll("section.pdf-section").forEach((s) => {
+          const el = s as HTMLElement;
+          if (s.getAttribute("data-slug") === "key_personnel") {
+            el.style.display = "";
+            el.style.breakBefore = "auto";
+          } else {
+            el.style.display = "none";
+          }
+        });
+        const qual = document.querySelector('[data-slug="key_personnel_qualifications"]');
+        if (qual) (qual as HTMLElement).style.display = "none";
+      });
+      const orgPdf = await bodyPage.pdf(measureOpts);
+      const orgDoc = await PDFDocument.load(orgPdf);
+      orgChartPageCount = orgDoc.getPageCount();
+      await bodyPage.evaluate(() => {
+        const qual = document.querySelector('[data-slug="key_personnel_qualifications"]');
+        if (qual) (qual as HTMLElement).style.display = "";
+      });
+    }
+
     // 8. Compute page map, schedule start page, and total page count
     let currentPage = 1;
     const pageMap: Record<string, number> = {};
     let scheduleStartPage = -1;
     for (const slug of sectionSlugs) {
       pageMap[slug] = currentPage;
+      if (slug === "key_personnel") {
+        pageMap["key_personnel_qualifications"] = currentPage + orgChartPageCount;
+      }
       currentPage += pageCounts[slug];
       if (slug === "project_schedule") {
         scheduleStartPage = currentPage; // first landscape page number

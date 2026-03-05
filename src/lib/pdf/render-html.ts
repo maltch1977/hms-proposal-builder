@@ -510,9 +510,16 @@ export async function renderBodyHtml(
   const enabledSections = data.sections.filter((s) => s.isEnabled);
   const bodySections = enabledSections.filter((s) => s.slug !== "cover_page");
 
-  const tocEntries = enabledSections
-    .filter((s) => s.slug !== "cover_page" && s.slug !== "table_of_contents")
-    .map((s) => ({ slug: s.slug, title: s.displayName }));
+  const tocEntries: { slug: string; title: string }[] = [];
+  for (const s of enabledSections) {
+    if (s.slug === "cover_page" || s.slug === "table_of_contents") continue;
+    if (s.slug === "key_personnel") {
+      tocEntries.push({ slug: "key_personnel", title: "Organization Chart" });
+      tocEntries.push({ slug: "key_personnel_qualifications", title: "Key Personnel" });
+    } else {
+      tocEntries.push({ slug: s.slug, title: s.displayName });
+    }
+  }
 
   const sectionHtmls: string[] = [];
 
@@ -798,10 +805,10 @@ function renderKeyPersonnelSection(
     orgContent += `</div>`;
   }
 
-  // Page 2: Personnel Qualifications — uses independently filtered list
+  // Page 2: Key Personnel — uses independently filtered list
   const qualContent = `
-    <div style="break-before: page;">
-      <div class="section-title-bar">Personnel Qualifications</div>
+    <div style="break-before: page;" data-slug="key_personnel_qualifications">
+      <div class="section-title-bar">Key Personnel</div>
       ${renderPersonnelCards(qualificationsPersonnel)}
     </div>
   `;

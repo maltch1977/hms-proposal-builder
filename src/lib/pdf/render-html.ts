@@ -29,13 +29,18 @@ const C = {
 // marks never affect PDF styling (bold, underline, background, etc.).
 function stripMarks(html: string): string {
   let result = html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
-  // Convert bold-only paragraphs to <h3> so they render as navy sub-headings.
-  // Handles: <p><strong>…</strong></p>, <p><u><strong>…</strong></u></p>,
-  //          <p><strong><u>…</u></strong></p>
+  // Split bold-leading paragraphs: <p><strong>Title</strong><br>body</p>
+  // → <h3>Title</h3><p>body</p>  (handles <u> wrapping variants too)
+  // Use [^<]+ for heading text to prevent matching across HTML tags.
   result = result
-    .replace(/<p><strong>([\s\S]*?)<\/strong><\/p>/g, "<h3>$1</h3>")
-    .replace(/<p><u><strong>([\s\S]*?)<\/strong><\/u><\/p>/g, "<h3>$1</h3>")
-    .replace(/<p><strong><u>([\s\S]*?)<\/u><\/strong><\/p>/g, "<h3>$1</h3>");
+    .replace(/<p><strong>([^<]+)<\/strong>\s*<br\s*\/?>([\s\S]*?)<\/p>/g, "<h3>$1</h3><p>$2</p>")
+    .replace(/<p><u><strong>([^<]+)<\/strong><\/u>\s*<br\s*\/?>([\s\S]*?)<\/p>/g, "<h3>$1</h3><p>$2</p>")
+    .replace(/<p><strong><u>([^<]+)<\/u><\/strong>\s*<br\s*\/?>([\s\S]*?)<\/p>/g, "<h3>$1</h3><p>$2</p>");
+  // Convert bold-only paragraphs: <p><strong>Title</strong></p> → <h3>Title</h3>
+  result = result
+    .replace(/<p><strong>([^<]+)<\/strong><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><u><strong>([^<]+)<\/strong><\/u><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><strong><u>([^<]+)<\/u><\/strong><\/p>/g, "<h3>$1</h3>");
   return result;
 }
 

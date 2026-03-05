@@ -205,10 +205,17 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
 // Also promotes bold-only paragraphs to <h3> for consistent navy sub-heading rendering.
 function stripMarks(html: string): string {
   let result = html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
+  // Split bold-leading paragraphs: <p><strong>Title</strong><br>body</p>
+  // → <h3>Title</h3><p>body</p>
   result = result
-    .replace(/<p><strong>([\s\S]*?)<\/strong><\/p>/g, "<h3>$1</h3>")
-    .replace(/<p><u><strong>([\s\S]*?)<\/strong><\/u><\/p>/g, "<h3>$1</h3>")
-    .replace(/<p><strong><u>([\s\S]*?)<\/u><\/strong><\/p>/g, "<h3>$1</h3>");
+    .replace(/<p><strong>([^<]+)<\/strong>\s*<br\s*\/?>([\s\S]*?)<\/p>/g, "<h3>$1</h3><p>$2</p>")
+    .replace(/<p><u><strong>([^<]+)<\/strong><\/u>\s*<br\s*\/?>([\s\S]*?)<\/p>/g, "<h3>$1</h3><p>$2</p>")
+    .replace(/<p><strong><u>([^<]+)<\/u><\/strong>\s*<br\s*\/?>([\s\S]*?)<\/p>/g, "<h3>$1</h3><p>$2</p>");
+  // Convert bold-only paragraphs: <p><strong>Title</strong></p> → <h3>Title</h3>
+  result = result
+    .replace(/<p><strong>([^<]+)<\/strong><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><u><strong>([^<]+)<\/strong><\/u><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><strong><u>([^<]+)<\/u><\/strong><\/p>/g, "<h3>$1</h3>");
   return result;
 }
 

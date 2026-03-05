@@ -21,20 +21,25 @@ interface CoverPageProps {
 export function CoverPage({ content, onChange, proposalId }: CoverPageProps) {
   const [suggestedPhotos, setSuggestedPhotos] = useState<CoverPhoto[]>([]);
   const [allPhotos, setAllPhotos] = useState<CoverPhoto[]>([]);
-  const [proposalTitle, setProposalTitle] = useState("");
   const supabase = createClient();
 
-  // Fetch the proposal title so the Project Name field shows it as placeholder
+  // Pre-populate Project Name with proposal title when it hasn't been set yet
   useEffect(() => {
+    if (content.project_name) return; // already set by user
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("proposals")
         .select("title")
         .eq("id", proposalId)
         .single();
-      if (data?.title) setProposalTitle(data.title);
+      if (!cancelled && data?.title) {
+        onChange({ ...content, project_name: data.title });
+      }
     })();
-  }, [proposalId, supabase]);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposalId]);
 
   const fetchSuggestedPhotos = useCallback(async () => {
     // Fetch proposal metadata
@@ -132,7 +137,7 @@ export function CoverPage({ content, onChange, proposalId }: CoverPageProps) {
         <Label htmlFor="cover-project-name">Project Name</Label>
         <Input
           id="cover-project-name"
-          placeholder={proposalTitle || "Project name (shown as main title on cover)"}
+          placeholder="Project name (shown as main title on cover)"
           value={content.project_name ?? ""}
           onChange={(e) => update("project_name", e.target.value)}
         />

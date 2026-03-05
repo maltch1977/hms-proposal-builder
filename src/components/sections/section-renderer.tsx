@@ -55,6 +55,7 @@ interface SectionRendererProps {
   rfpRequirements?: RFPRequirement[];
   requirementMappings?: RequirementMapping[];
   onRequirementDone?: (reqId: string, done: boolean) => void;
+  proposalTitle?: string;
 }
 
 export function SectionRenderer({
@@ -68,6 +69,7 @@ export function SectionRenderer({
   rfpRequirements = [],
   requirementMappings = [],
   onRequirementDone,
+  proposalTitle,
 }: SectionRendererProps) {
   const slug = section.section_type.slug;
   const content = (section.content || {}) as Record<string, unknown>;
@@ -211,6 +213,7 @@ export function SectionRenderer({
           content={content as CoverPageContent}
           onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
           proposalId={proposalId}
+          proposalTitle={proposalTitle}
         />
       );
       break;

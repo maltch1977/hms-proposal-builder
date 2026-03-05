@@ -24,6 +24,7 @@ interface SectionEditorProps {
   rfpRequirements?: RFPRequirement[];
   requirementMappings?: RequirementMapping[];
   onRequirementDone?: (reqId: string, done: boolean) => void;
+  proposalTitle?: string;
 }
 
 export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
@@ -42,6 +43,7 @@ export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
       rfpRequirements = [],
       requirementMappings = [],
       onRequirementDone,
+      proposalTitle,
     },
     ref
   ) {
@@ -74,6 +76,7 @@ export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
                   rfpRequirements={rfpRequirements}
                   requirementMappings={requirementMappings}
                   onRequirementDone={onRequirementDone}
+                  proposalTitle={proposalTitle}
                 />
               </SectionWrapper>
             ))}

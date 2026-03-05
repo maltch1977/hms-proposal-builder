@@ -780,6 +780,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
           rfpRequirements={rfpRequirements}
           requirementMappings={requirementMappings}
           onRequirementDone={handleSetRequirementDone}
+          proposalTitle={proposal?.title}
         />
         {showChanges && (
           <ChangesPanel

@@ -66,11 +66,6 @@ export function CaseStudySelector({ proposalId }: CaseStudySelectorProps) {
   const availableProjects = allProjects.filter((p) => !selectedIds.has(p.id));
 
   const handleAdd = async (project: PastProject) => {
-    if (selectedStudies.length >= 5) {
-      toast.error("Maximum 5 case studies allowed");
-      return;
-    }
-
     const res = await fetch(`/api/proposals/${proposalId}/case-studies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -113,11 +108,6 @@ export function CaseStudySelector({ proposalId }: CaseStudySelectorProps) {
     narrative?: string;
     square_footage?: number;
   }) => {
-    if (selectedStudies.length >= 5) {
-      toast.error("Maximum 5 case studies allowed");
-      return;
-    }
-
     // 1. Create the past project via API
     const createRes = await fetch("/api/past-projects", {
       method: "POST",
@@ -179,8 +169,7 @@ export function CaseStudySelector({ proposalId }: CaseStudySelectorProps) {
         />
       ))}
 
-      {selectedStudies.length < 5 && (
-        <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setShowCreate(false); }}>
+      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setShowCreate(false); }}>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="h-9 gap-2">
               <Plus className="h-3.5 w-3.5" />
@@ -234,7 +223,6 @@ export function CaseStudySelector({ proposalId }: CaseStudySelectorProps) {
             )}
           </PopoverContent>
         </Popover>
-      )}
     </div>
   );
 }

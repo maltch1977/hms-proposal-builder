@@ -25,7 +25,7 @@ export const ASSET_CONFIGS: Record<string, AssetTypeConfig> = {
     unlinkBodyKey: "study_id",
     nestedKey: "project",
     searchFields: ["project_name", "client_name", "building_type", "project_type"],
-    maxItems: 5,
+    maxItems: undefined,
     getTitle: (item) => (item as PastProject).project_name,
     getSubtitle: (item) => {
       const p = item as PastProject;

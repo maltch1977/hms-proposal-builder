@@ -83,7 +83,7 @@ export function FirmBackground({
           Case Studies
         </h4>
         <p className="text-xs text-muted-foreground mb-4">
-          Select 1-5 past projects to showcase as case studies.
+          Select past projects to showcase as case studies.
         </p>
         <Button
           variant="outline"

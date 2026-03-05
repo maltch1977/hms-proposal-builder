@@ -25,6 +25,7 @@ interface SectionEditorProps {
   requirementMappings?: RequirementMapping[];
   onRequirementDone?: (reqId: string, done: boolean) => void;
   proposalTitle?: string;
+  onTitleChange?: (title: string) => void;
 }
 
 export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
@@ -44,6 +45,7 @@ export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
       requirementMappings = [],
       onRequirementDone,
       proposalTitle,
+      onTitleChange,
     },
     ref
   ) {
@@ -77,6 +79,7 @@ export const SectionEditor = forwardRef<HTMLDivElement, SectionEditorProps>(
                   requirementMappings={requirementMappings}
                   onRequirementDone={onRequirementDone}
                   proposalTitle={proposalTitle}
+                  onTitleChange={onTitleChange}
                 />
               </SectionWrapper>
             ))}

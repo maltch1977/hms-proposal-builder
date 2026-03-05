@@ -781,6 +781,7 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
           requirementMappings={requirementMappings}
           onRequirementDone={handleSetRequirementDone}
           proposalTitle={proposal?.title}
+          onTitleChange={(title) => updateProposal({ title })}
         />
         {showChanges && (
           <ChangesPanel

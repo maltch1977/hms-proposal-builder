@@ -17,9 +17,10 @@ interface CoverPageProps {
   onChange: (content: CoverPageContent) => void;
   proposalId: string;
   proposalTitle?: string;
+  onTitleChange?: (title: string) => void;
 }
 
-export function CoverPage({ content, onChange, proposalId, proposalTitle }: CoverPageProps) {
+export function CoverPage({ content, onChange, proposalId, proposalTitle, onTitleChange }: CoverPageProps) {
   const [suggestedPhotos, setSuggestedPhotos] = useState<CoverPhoto[]>([]);
   const [allPhotos, setAllPhotos] = useState<CoverPhoto[]>([]);
   const supabase = createClient();
@@ -122,7 +123,10 @@ export function CoverPage({ content, onChange, proposalId, proposalTitle }: Cove
           id="cover-project-name"
           placeholder="Project name (shown as main title on cover)"
           value={content.project_name ?? proposalTitle ?? ""}
-          onChange={(e) => update("project_name", e.target.value)}
+          onChange={(e) => {
+            update("project_name", e.target.value);
+            onTitleChange?.(e.target.value);
+          }}
         />
       </div>
 

@@ -56,6 +56,7 @@ interface SectionRendererProps {
   requirementMappings?: RequirementMapping[];
   onRequirementDone?: (reqId: string, done: boolean) => void;
   proposalTitle?: string;
+  onTitleChange?: (title: string) => void;
 }
 
 export function SectionRenderer({
@@ -70,6 +71,7 @@ export function SectionRenderer({
   requirementMappings = [],
   onRequirementDone,
   proposalTitle,
+  onTitleChange,
 }: SectionRendererProps) {
   const slug = section.section_type.slug;
   const content = (section.content || {}) as Record<string, unknown>;
@@ -214,6 +216,7 @@ export function SectionRenderer({
           onChange={(c) => onUpdateContent(c as unknown as Record<string, unknown>)}
           proposalId={proposalId}
           proposalTitle={proposalTitle}
+          onTitleChange={onTitleChange}
         />
       );
       break;

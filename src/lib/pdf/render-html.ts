@@ -41,6 +41,8 @@ function stripMarks(html: string): string {
     .replace(/<p><strong>([^<]+)<\/strong><\/p>/g, "<h3>$1</h3>")
     .replace(/<p><u><strong>([^<]+)<\/strong><\/u><\/p>/g, "<h3>$1</h3>")
     .replace(/<p><strong><u>([^<]+)<\/u><\/strong><\/p>/g, "<h3>$1</h3>");
+  // Ensure all promoted headings end with a colon
+  result = result.replace(/<h3>([^<]*[^:<])<\/h3>/g, "<h3>$1:</h3>");
   return result;
 }
 

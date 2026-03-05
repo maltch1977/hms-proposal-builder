@@ -2,6 +2,7 @@
 // Each section type stores its content as JSONB — these define the expected shapes
 
 export interface CoverPageContent {
+  project_name?: string;
   client_name?: string;
   client_address?: string;
   project_label?: string;

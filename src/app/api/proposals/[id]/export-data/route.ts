@@ -85,8 +85,15 @@ export async function GET(
     }));
   }
 
+  // Check cover page section for project_name override
+  const coverSection = (sections || []).find((s) => {
+    const st = (s as unknown as { section_type: SectionType }).section_type;
+    return st.slug === "cover_page";
+  });
+  const coverContent = (coverSection?.content || {}) as Record<string, unknown>;
+
   return NextResponse.json({
-    title: proposal.title,
+    title: (coverContent.project_name as string) || proposal.title,
     clientName: proposal.client_name,
     clientAddress: proposal.client_address,
     projectLabel: proposal.project_label,

@@ -115,6 +115,16 @@ export function CoverPage({ content, onChange, proposalId }: CoverPageProps) {
         </RadioGroup>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="cover-project-name">Project Name</Label>
+        <Input
+          id="cover-project-name"
+          placeholder="Project name (shown as main title on cover)"
+          value={content.project_name ?? ""}
+          onChange={(e) => update("project_name", e.target.value)}
+        />
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="cover-client">Client Name</Label>

@@ -124,7 +124,7 @@ export async function GET(
 
   // Assemble document data — keep image URLs as-is, images.ts resolves to base64 later
   const docData: ProposalDocumentData = {
-    title: proposal.title,
+    title: (coverContent.project_name as string) || proposal.title,
     clientName: (coverContent.client_name as string) || proposal.client_name,
     clientAddress: (coverContent.client_address as string) || proposal.client_address,
     projectLabel: (coverContent.project_label as string) || proposal.project_label || "RESPONSE TO RFP",

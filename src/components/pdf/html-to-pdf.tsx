@@ -80,50 +80,13 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
   const children = node.children?.map((child, i) => renderNode(child, i));
 
   switch (node.tag) {
-    case "p": {
-      // Bold-only paragraphs render as navy sub-headings (matches h3 style)
-      // Handle: <p><strong>…</strong></p>, <p><u><strong>…</strong></u></p>,
-      //         <p><strong><u>…</u></strong></p>
-      const isBoldOnly = (() => {
-        if (node.children?.length !== 1 || node.children[0].type !== "element") return false;
-        let inner = node.children[0];
-        // Unwrap <u> wrapping <strong>
-        if (inner.tag === "u" && inner.children?.length === 1 && inner.children[0].type === "element") {
-          inner = inner.children[0];
-        }
-        return inner.tag === "strong" || inner.tag === "b";
-      })();
-      if (isBoldOnly) {
-        // Extract the deepest text content, skipping <strong>/<u> wrappers
-        let textNode = node.children![0];
-        while (textNode.type === "element" && (textNode.tag === "strong" || textNode.tag === "b" || textNode.tag === "u") && textNode.children?.length) {
-          if (textNode.children.length === 1 && textNode.children[0].type === "element") {
-            textNode = textNode.children[0];
-          } else {
-            break;
-          }
-        }
-        return (
-          <Text
-            key={key}
-            style={{
-              fontSize: 10.5,
-              fontFamily: "Helvetica-Bold",
-              color: COLORS.navy,
-              marginTop: 8,
-              marginBottom: 4,
-            }}
-          >
-            {textNode.children?.map((c, j) => renderNode(c, j))}
-          </Text>
-        );
-      }
+    case "p":
+      // Bold-only paragraphs are promoted to <h3> in stripMarks() preprocessing
       return (
         <Text key={key} style={{ marginBottom: 6, fontSize: 10, lineHeight: 1.6 }}>
           {children}
         </Text>
       );
-    }
     case "h2":
       return (
         <View key={key} minPresenceAhead={0.15}>
@@ -238,9 +201,15 @@ function renderNode(node: HtmlNode, key: number): React.ReactNode {
   }
 }
 
-// Strip <mark> tags (requirement marks from TipTap) — keeps inner text, removes styling
+// Strip <mark> tags (requirement marks from TipTap) — keeps inner text, removes styling.
+// Also promotes bold-only paragraphs to <h3> for consistent navy sub-heading rendering.
 function stripMarks(html: string): string {
-  return html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
+  let result = html.replace(/<mark[^>]*>/gi, "").replace(/<\/mark>/gi, "");
+  result = result
+    .replace(/<p><strong>([\s\S]*?)<\/strong><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><u><strong>([\s\S]*?)<\/strong><\/u><\/p>/g, "<h3>$1</h3>")
+    .replace(/<p><strong><u>([\s\S]*?)<\/u><\/strong><\/p>/g, "<h3>$1</h3>");
+  return result;
 }
 
 export function HtmlContent({ html }: { html: string }) {

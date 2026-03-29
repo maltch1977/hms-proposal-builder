@@ -103,15 +103,9 @@ describe("CreateProposalDialog — Build Mode Selector", () => {
     fetchMock = vi.fn();
     global.fetch = fetchMock;
 
-    // Default: find-similar returns no matches, create returns success
+    // Default: create returns success
     fetchMock.mockImplementation((url: string) => {
-      if (typeof url === "string" && url.includes("/api/ai/find-similar")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ matches: [] }),
-        });
-      }
-      if (typeof url === "string" && url.includes("/api/proposals") && !url.includes("/duplicate")) {
+      if (typeof url === "string" && url.includes("/api/proposals")) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ id: "new-proposal-123" }),
@@ -170,7 +164,7 @@ describe("CreateProposalDialog — Build Mode Selector", () => {
 
     await waitFor(() => {
       const createCall = fetchMock.mock.calls.find(
-        (c: unknown[]) => typeof c[0] === "string" && c[0].includes("/api/proposals") && !c[0].includes("find-similar")
+        (c: unknown[]) => typeof c[0] === "string" && c[0].includes("/api/proposals")
       );
       expect(createCall).toBeDefined();
 
@@ -227,7 +221,7 @@ describe("CreateProposalDialog — Build Mode Selector", () => {
 
     // Switch to Upload RFP mode
     fireEvent.click(screen.getByText("Upload RFP"));
-    fireEvent.click(screen.getByText("Continue with RFP Upload"));
+    fireEvent.click(screen.getByText("Continue to Upload"));
 
     expect(onRequestRfpUpload).toHaveBeenCalledWith({
       clientName: "Test Client",
@@ -236,44 +230,38 @@ describe("CreateProposalDialog — Build Mode Selector", () => {
     });
   });
 
-  it("duplicate flow still works regardless of build mode", async () => {
-    // Return a similar proposal
-    fetchMock.mockImplementation((url: string) => {
-      if (typeof url === "string" && url.includes("/api/ai/find-similar")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              matches: [
-                { id: "old-proposal-1", title: "Old HVAC Project", similarity_reason: "Same client" },
-              ],
-            }),
-        });
-      }
-      if (typeof url === "string" && url.includes("/duplicate")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: "dup-proposal-456" }),
-        });
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: "new-id" }) });
-    });
-
+  it("CTA shows 'Continue to Upload' when Upload RFP mode selected", async () => {
     render(
       <CreateProposalDialog open={true} onOpenChange={vi.fn()} />
     );
 
     confirmClient();
-
     await waitFor(() => {
-      expect(screen.getByText("Similar proposals found")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("e.g., HVAC Controls Upgrade")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("Use"));
+    setProjectName("HVAC Upgrade");
+    fireEvent.click(screen.getByText("Upload RFP"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/proposals/dup-proposal-456");
+      expect(screen.getByText("Continue to Upload")).toBeInTheDocument();
     });
+  });
+
+  it("does not call find-similar API", async () => {
+    render(
+      <CreateProposalDialog open={true} onOpenChange={vi.fn()} />
+    );
+
+    confirmClient();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("e.g., HVAC Controls Upgrade")).toBeInTheDocument();
+    });
+
+    const similarCall = fetchMock.mock.calls.find(
+      (c: unknown[]) => typeof c[0] === "string" && c[0].includes("/api/ai/find-similar")
+    );
+    expect(similarCall).toBeUndefined();
   });
 });
 

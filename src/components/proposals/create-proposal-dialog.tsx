@@ -118,7 +118,7 @@ export function CreateProposalDialog({
 
         {/* Fixed-height form body — all slots always mounted, visibility controlled via CSS */}
         <div className="flex h-[380px] flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1">
             {/* Client entry zone — stable min-height across all three states */}
             <div className="min-h-[200px]">
               {!manualMode ? (
@@ -183,8 +183,8 @@ export function CreateProposalDialog({
                   <div className="rounded-lg border border-border bg-muted/30 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-medium text-foreground truncate">{clientName}</p>
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="font-medium text-foreground break-words">{clientName}</p>
+                        <p className="text-sm text-muted-foreground break-words">
                           {[address.street, [address.city, address.state].filter(Boolean).join(", "), address.zip].filter(Boolean).join(", ")}
                         </p>
                       </div>

@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/proposals/empty-state";
 import { CreateProposalDialog } from "@/components/proposals/create-proposal-dialog";
 import { RFPUploadDialog } from "@/components/proposals/rfp-upload-dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, FileUp } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/lib/types/database";
 
@@ -100,21 +100,13 @@ export function ProposalList() {
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
             />
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => setShowCreateDialog(true)}
-              >
-                New Proposal
-              </Button>
-              <Button
-                onClick={() => setShowRfpDialog(true)}
-                className="bg-hms-navy hover:bg-hms-navy-light"
-              >
-                <FileUp className="mr-2 h-4 w-4" />
-                Upload RFP
-              </Button>
-            </div>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="bg-hms-navy hover:bg-hms-navy-light"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Proposal
+            </Button>
           </div>
 
           {filteredProposals.length === 0 ? (

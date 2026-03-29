@@ -310,7 +310,7 @@ export function CreateProposalDialog({
                     Build Manually
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    Start with blank sections and write your own content
+                    Start with a prebuilt proposal structure and edit what you need
                   </span>
                 </button>
                 <button

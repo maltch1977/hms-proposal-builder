@@ -45,7 +45,7 @@ export function CreateProposalDialog({
   const [clientName, setClientName] = useState("");
   const [address, setAddress] = useState<AddressFields>(emptyAddress);
   const [clientConfirmed, setClientConfirmed] = useState(false);
-  const [manualMode, setManualMode] = useState(false);
+  const [manualMode, setManualMode] = useState(true);
   const [loading, setLoading] = useState(false);
   const [similarProposals, setSimilarProposals] = useState<SimilarProposal[]>([]);
   const [checkingSimilar, setCheckingSimilar] = useState(false);
@@ -56,7 +56,7 @@ export function CreateProposalDialog({
     setClientName("");
     setAddress(emptyAddress);
     setClientConfirmed(false);
-    setManualMode(false);
+    setManualMode(true);
     setTitle("");
     setSimilarProposals([]);
     setBuildMode("build_manually");
@@ -161,7 +161,7 @@ export function CreateProposalDialog({
         <DialogHeader>
           <DialogTitle>New Proposal</DialogTitle>
           <DialogDescription>
-            Search for the client business, confirm the details, then name your project.
+            Enter the client details, then name your project.
           </DialogDescription>
         </DialogHeader>
 
@@ -205,7 +205,7 @@ export function CreateProposalDialog({
                   className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => setManualMode(false)}
                 >
-                  Back to search
+                  Search business directory
                 </Button>
                 <Button
                   type="button"

@@ -49,7 +49,14 @@ vi.mock("@/components/ui/address-autocomplete", () => ({
       </div>
     );
   },
-  ManualAddressFields: () => <div data-testid="manual-address" />,
+  ManualAddressFields: ({ onChange }: { value: unknown; onChange: (addr: { street: string; city: string; state: string; zip: string }) => void }) => (
+    <button
+      data-testid="fill-address"
+      onClick={() => onChange({ street: "123 Main St", city: "Portland", state: "OR", zip: "97201" })}
+    >
+      Fill Address
+    </button>
+  ),
 }));
 
 // Stub FileUpload for RFP dialog
@@ -72,8 +79,13 @@ vi.mock("@/components/proposals/collaborator-selector", () => ({
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function confirmClient() {
-  fireEvent.click(screen.getByTestId("select-place"));
-  fireEvent.click(screen.getByTestId("confirm-place"));
+  // Fill client name in manual entry form (now the default)
+  const nameInput = screen.getByPlaceholderText("e.g., Columbia Memorial Hospital");
+  fireEvent.change(nameInput, { target: { value: "Test Client" } });
+  // Fill address via stub
+  fireEvent.click(screen.getByTestId("fill-address"));
+  // Confirm
+  fireEvent.click(screen.getByText("Confirm Client"));
 }
 
 function setProjectName(name: string) {

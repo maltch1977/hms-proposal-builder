@@ -14,9 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlaceSearch, ManualAddressFields, type AddressFields } from "@/components/ui/address-autocomplete";
-import { Loader2, Copy, FileUp, PenLine } from "lucide-react";
+import { Loader2, FileUp, PenLine } from "lucide-react";
 import { toast } from "sonner";
-import type { SimilarProposal } from "@/lib/ai/types";
 
 type BuildMode = "build_manually" | "upload_rfp";
 
@@ -47,8 +46,6 @@ export function CreateProposalDialog({
   const [clientConfirmed, setClientConfirmed] = useState(false);
   const [manualMode, setManualMode] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [similarProposals, setSimilarProposals] = useState<SimilarProposal[]>([]);
-  const [checkingSimilar, setCheckingSimilar] = useState(false);
   const [buildMode, setBuildMode] = useState<BuildMode>("build_manually");
   const router = useRouter();
 
@@ -58,51 +55,7 @@ export function CreateProposalDialog({
     setClientConfirmed(false);
     setManualMode(true);
     setTitle("");
-    setSimilarProposals([]);
     setBuildMode("build_manually");
-  };
-
-  const checkSimilarProposals = async (client: string) => {
-    setCheckingSimilar(true);
-    try {
-      const res = await fetch("/api/ai/find-similar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_name: client,
-          project_name: "",
-          client_address: formatAddress(address),
-        }),
-      });
-      if (res.ok) {
-        const { matches } = await res.json();
-        setSimilarProposals(matches || []);
-      }
-    } catch {
-      // Silently fail — not critical
-    }
-    setCheckingSimilar(false);
-  };
-
-  const handleDuplicateFrom = async (proposalId: string) => {
-    setLoading(true);
-    toast.info("Duplicating proposal...");
-    try {
-      const res = await fetch(`/api/proposals/${proposalId}/duplicate`, { method: "POST" });
-      if (!res.ok) {
-        toast.error("Failed to duplicate");
-        setLoading(false);
-        return;
-      }
-      const data = await res.json();
-      toast.success("Proposal duplicated");
-      onOpenChange(false);
-      resetAll();
-      router.push(`/proposals/${data.id}`);
-    } catch {
-      toast.error("Duplication failed");
-    }
-    setLoading(false);
   };
 
   const handleCreate = async () => {
@@ -148,13 +101,11 @@ export function CreateProposalDialog({
         className="sm:max-w-2xl left-[calc(50%+120px)]"
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
-          // Allow clicks on Google Places dropdown
           if (target.closest(".pac-container")) {
             e.preventDefault();
           }
         }}
         onFocusOutside={(e) => {
-          // Prevent dialog from reclaiming focus from Google Places dropdown
           e.preventDefault();
         }}
       >
@@ -165,203 +116,178 @@ export function CreateProposalDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {!manualMode ? (
-            <PlaceSearch
-              clientName={clientName}
-              selectedAddress={address}
-              confirmed={clientConfirmed}
-              onSelect={(name, addr) => {
-                setClientName(name);
-                setAddress(addr);
-              }}
-              onConfirm={() => { setClientConfirmed(true); checkSimilarProposals(clientName); }}
-              onReset={() => {
-                setClientName("");
-                setAddress(emptyAddress);
-                setClientConfirmed(false);
-              }}
-              onManualEntry={() => setManualMode(true)}
-            />
-          ) : !clientConfirmed ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="manualClientName">Client Name</Label>
-                <Input
-                  id="manualClientName"
-                  placeholder="e.g., Columbia Memorial Hospital"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+        {/* Fixed-height form body — all slots always mounted, visibility controlled via CSS */}
+        <div className="flex h-[380px] flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {/* Client entry zone — stable min-height across all three states */}
+            <div className="min-h-[200px]">
+              {!manualMode ? (
+                <PlaceSearch
+                  clientName={clientName}
+                  selectedAddress={address}
+                  confirmed={clientConfirmed}
+                  onSelect={(name, addr) => {
+                    setClientName(name);
+                    setAddress(addr);
+                  }}
+                  onConfirm={() => { setClientConfirmed(true); }}
+                  onReset={() => {
+                    setClientName("");
+                    setAddress(emptyAddress);
+                    setClientConfirmed(false);
+                  }}
+                  onManualEntry={() => setManualMode(true)}
                 />
-              </div>
-              <ManualAddressFields value={address} onChange={setAddress} />
-              <div className="flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => setManualMode(false)}
-                >
-                  Search business directory
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="bg-hms-navy hover:bg-hms-navy-light"
-                  onClick={() => { setClientConfirmed(true); checkSimilarProposals(clientName); }}
-                  disabled={!clientName || !address.street || !address.city || !address.state}
-                >
-                  Confirm Client
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium text-foreground">{clientName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {[address.street, [address.city, address.state].filter(Boolean).join(", "), address.zip].filter(Boolean).join(", ")}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetAll}
-                  className="shrink-0 text-muted-foreground hover:text-foreground"
-                >
-                  Change
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {clientConfirmed && similarProposals.length > 0 && (
-            <div className="rounded-lg border border-hms-gold/50 bg-hms-gold/5 p-3 space-y-2">
-              <p className="text-sm font-medium text-foreground">
-                Similar proposals found
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Start from an existing proposal to save time.
-              </p>
-              {similarProposals.map((sp) => (
-                <div
-                  key={sp.id}
-                  className="flex items-center justify-between rounded-md border border-border bg-card p-2"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{sp.title}</p>
-                    <p className="text-xs text-muted-foreground">{sp.similarity_reason}</p>
+              ) : !clientConfirmed ? (
+                <div className="flex flex-col gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="manualClientName">Client Name</Label>
+                    <Input
+                      id="manualClientName"
+                      className="h-9"
+                      placeholder="e.g., Columbia Memorial Hospital"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                    />
+                    {/* Reserved helper slot — prevents shift if helper text is added later */}
+                    <div className="h-4" />
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="ml-2 shrink-0 h-7 text-xs"
-                    onClick={() => handleDuplicateFrom(sp.id)}
-                    disabled={loading}
-                  >
-                    <Copy className="mr-1 h-3 w-3" />
-                    Use
-                  </Button>
+                  <ManualAddressFields value={address} onChange={setAddress} />
+                  <div className="flex items-center justify-between">
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setManualMode(false)}
+                    >
+                      Search business directory
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-hms-navy hover:bg-hms-navy-light"
+                      onClick={() => { setClientConfirmed(true); }}
+                      disabled={!clientName || !address.street || !address.city || !address.state}
+                    >
+                      Confirm Client
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ) : (
+                /* Confirmed state: all three slots always rendered with fixed gaps */
+                <div className="flex flex-col gap-4">
+                  {/* Slot 1: confirmed client card */}
+                  <div className="rounded-lg border border-border bg-muted/30 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate">{clientName}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {[address.street, [address.city, address.state].filter(Boolean).join(", "), address.zip].filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetAll}
+                        className="shrink-0 text-muted-foreground hover:text-foreground"
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  </div>
 
-          {clientConfirmed && (
-            <div className="space-y-2">
-              <Label htmlFor="title">Project Name</Label>
-              <Input
-                id="title"
-                placeholder="e.g., HVAC Controls Upgrade"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && title) {
-                    e.preventDefault();
-                    if (buildMode === "build_manually") handleCreate();
-                  }
-                }}
-              />
-            </div>
-          )}
+                  {/* Slot 2: project name — always mounted */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="title">Project Name</Label>
+                    <Input
+                      id="title"
+                      className="h-9"
+                      placeholder="e.g., HVAC Controls Upgrade"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && title) {
+                          e.preventDefault();
+                          if (buildMode === "build_manually") handleCreate();
+                        }
+                      }}
+                    />
+                    {/* Reserved helper slot */}
+                    <div className="h-4" />
+                  </div>
 
-          {clientConfirmed && title && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">How would you like to start?</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setBuildMode("build_manually")}
-                  className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-colors ${
-                    buildMode === "build_manually"
-                      ? "border-hms-navy bg-hms-navy/5"
-                      : "border-border hover:border-muted-foreground/30"
-                  }`}
-                >
-                  <PenLine className={`h-5 w-5 ${buildMode === "build_manually" ? "text-hms-navy" : "text-muted-foreground"}`} />
-                  <span className={`text-sm font-medium ${buildMode === "build_manually" ? "text-hms-navy" : "text-foreground"}`}>
-                    Build Manually
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Start with a prebuilt proposal structure and edit what you need
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBuildMode("upload_rfp")}
-                  className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-colors ${
-                    buildMode === "upload_rfp"
-                      ? "border-hms-navy bg-hms-navy/5"
-                      : "border-border hover:border-muted-foreground/30"
-                  }`}
-                >
-                  <FileUp className={`h-5 w-5 ${buildMode === "upload_rfp" ? "text-hms-navy" : "text-muted-foreground"}`} />
-                  <span className={`text-sm font-medium ${buildMode === "upload_rfp" ? "text-hms-navy" : "text-foreground"}`}>
-                    Upload RFP
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Upload an RFP document and auto-generate content with AI
-                  </span>
-                </button>
-              </div>
+                  {/* Slot 3: mode selector — always mounted, visibility toggled */}
+                  <div
+                    className={`flex items-center gap-1 rounded-md border p-1 ${
+                      title
+                        ? "border-border"
+                        : "border-transparent invisible pointer-events-none"
+                    }`}
+                    aria-hidden={!title}
+                  >
+                    <button
+                      type="button"
+                      tabIndex={title ? 0 : -1}
+                      onClick={() => setBuildMode("build_manually")}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium ${
+                        buildMode === "build_manually"
+                          ? "bg-hms-navy text-white"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <PenLine className="h-3.5 w-3.5" />
+                      Build Manually
+                    </button>
+                    <button
+                      type="button"
+                      tabIndex={title ? 0 : -1}
+                      onClick={() => setBuildMode("upload_rfp")}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium ${
+                        buildMode === "upload_rfp"
+                          ? "bg-hms-navy text-white"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <FileUp className="h-3.5 w-3.5" />
+                      Upload RFP
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {clientConfirmed && (
+          {/* Footer — always mounted, visibility toggled to prevent height shift */}
+          <div
+            className={`mt-auto pt-4 border-t ${
+              clientConfirmed
+                ? ""
+                : "invisible pointer-events-none"
+            }`}
+            aria-hidden={!clientConfirmed}
+          >
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
+                tabIndex={clientConfirmed ? 0 : -1}
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
                 Cancel
               </Button>
-              {buildMode === "build_manually" ? (
-                <Button
-                  type="button"
-                  className="bg-hms-navy hover:bg-hms-navy-light"
-                  disabled={loading || !title}
-                  onClick={handleCreate}
-                >
-                  {loading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Create Proposal
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  className="bg-hms-navy hover:bg-hms-navy-light"
-                  disabled={!title}
-                  onClick={() => {
+              <Button
+                type="button"
+                className="bg-hms-navy hover:bg-hms-navy-light"
+                tabIndex={clientConfirmed ? 0 : -1}
+                disabled={loading || !title}
+                onClick={() => {
+                  if (buildMode === "upload_rfp") {
                     if (onRequestRfpUpload) {
                       onRequestRfpUpload({
                         clientName,
@@ -371,14 +297,16 @@ export function CreateProposalDialog({
                     }
                     onOpenChange(false);
                     resetAll();
-                  }}
-                >
-                  <FileUp className="mr-2 h-4 w-4" />
-                  Continue with RFP Upload
-                </Button>
-              )}
+                  } else {
+                    handleCreate();
+                  }
+                }}
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {buildMode === "upload_rfp" ? "Continue to Upload" : "Create Proposal"}
+              </Button>
             </DialogFooter>
-          )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

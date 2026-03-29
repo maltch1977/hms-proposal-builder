@@ -20,6 +20,11 @@ export function ProposalList() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRfpDialog, setShowRfpDialog] = useState(false);
+  const [rfpPrefill, setRfpPrefill] = useState<{
+    clientName: string;
+    clientAddress: string;
+    projectName: string;
+  } | null>(null);
 
   const fetchProposals = useCallback(async () => {
     try {
@@ -136,11 +141,19 @@ export function ProposalList() {
       <CreateProposalDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
+        onRequestRfpUpload={(prefill) => {
+          setRfpPrefill(prefill);
+          setShowRfpDialog(true);
+        }}
       />
 
       <RFPUploadDialog
         open={showRfpDialog}
-        onOpenChange={setShowRfpDialog}
+        onOpenChange={(v) => {
+          setShowRfpDialog(v);
+          if (!v) setRfpPrefill(null);
+        }}
+        prefill={rfpPrefill}
       />
     </>
   );

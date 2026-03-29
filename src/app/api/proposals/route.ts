@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, client_name, client_address, rfp_requirements, deadline, collaborator_ids } = body;
+  const { title, client_name, client_address, rfp_requirements, deadline, collaborator_ids, build_mode } = body;
 
   if (!title || !client_name) {
     return NextResponse.json(
@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
       client_name,
       client_address: client_address || "",
       ...(deadline ? { deadline } : {}),
-      ...(rfp_requirements ? { metadata: { rfp_requirements } } : {}),
+      metadata: {
+        ...(rfp_requirements ? { rfp_requirements } : {}),
+        ...(build_mode ? { build_mode } : {}),
+      },
     })
     .select()
     .single();
@@ -125,9 +128,91 @@ export async function POST(request: NextRequest) {
             ...existingContent,
             client_name: client_name || "",
             client_address: client_address || "",
+            // For manual proposals, default label to "PROPOSAL" instead of "RESPONSE TO RFP"
+            ...(build_mode === "manual" ? { project_label: "PROPOSAL" } : {}),
           },
         })
         .eq("id", coverSection.id);
+    }
+  }
+
+  // ── Manual-mode enhancements ─────────────────────────────────────────────
+  if (build_mode === "manual") {
+    // 1. Pre-populate library default content into sections so they aren't blank
+    const { data: sectionsWithLibrary } = await supabase
+      .from("proposal_sections")
+      .select("id, library_item_id, content, section_type_id, section_types!inner(slug)")
+      .eq("proposal_id", proposal.id)
+      .not("library_item_id", "is", null);
+
+    if (sectionsWithLibrary && sectionsWithLibrary.length > 0) {
+      const libraryIds = sectionsWithLibrary.map((s) => s.library_item_id).filter(Boolean) as string[];
+      const { data: libraryItems } = await supabase
+        .from("library_items")
+        .select("id, content")
+        .in("id", libraryIds);
+
+      if (libraryItems) {
+        const libraryContentMap = new Map(libraryItems.map((li) => [li.id, li.content]));
+        for (const section of sectionsWithLibrary) {
+          const libContent = libraryContentMap.get(section.library_item_id!);
+          if (libContent && (!section.content || Object.keys(section.content as object).length === 0)) {
+            await supabase
+              .from("proposal_sections")
+              .update({ content: libContent })
+              .eq("id", section.id);
+          }
+        }
+      }
+    }
+
+    // 2. Disable optional sections: closeout, interview_panel
+    const { data: optionalSections } = await supabase
+      .from("proposal_sections")
+      .select("id, section_types!inner(slug)")
+      .eq("proposal_id", proposal.id)
+      .in("section_types.slug", ["closeout", "interview_panel"]);
+
+    if (optionalSections && optionalSections.length > 0) {
+      const optionalIds = optionalSections.map((s) => s.id);
+      await supabase
+        .from("proposal_sections")
+        .update({ is_enabled: false })
+        .in("id", optionalIds);
+    }
+
+    // 3. Reorder executive_summary to after key_personnel (canonical PDF position)
+    //    Default order: cover(1), intro(2), toc(3), firm(4), personnel(5), schedule(6),
+    //    logistics(7), qaqc(8), closeout(9), ref(10), interview(11), cost(12), exec(13)
+    //    Target:  cover(1), intro(2), toc(3), firm(4), personnel(5), exec_summary(6),
+    //             schedule(7), logistics(8), qaqc(9), closeout(10), ref(11), interview(12), cost(13)
+    const { data: allSections } = await supabase
+      .from("proposal_sections")
+      .select("id, order_index, section_types!inner(slug)")
+      .eq("proposal_id", proposal.id)
+      .order("order_index", { ascending: true });
+
+    if (allSections) {
+      const execSection = allSections.find(
+        (s) => (s.section_types as unknown as { slug: string }).slug === "executive_summary"
+      );
+      if (execSection && execSection.order_index > 6) {
+        // Shift sections that are between position 6 and exec's current position up by 1
+        const toShift = allSections.filter(
+          (s) => s.order_index >= 6 && s.order_index < execSection.order_index && s.id !== execSection.id
+        );
+        for (const s of toShift) {
+          await supabase
+            .from("proposal_sections")
+            .update({ order_index: s.order_index + 1 })
+            .eq("id", s.id);
+        }
+        // Place executive_summary at position 6
+        await supabase
+          .from("proposal_sections")
+          .update({ order_index: 6 })
+          .eq("id", execSection.id);
+      }
     }
   }
 

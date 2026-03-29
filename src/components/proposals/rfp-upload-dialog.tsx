@@ -20,9 +20,16 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/providers/auth-provider";
 import type { ParsedRFP } from "@/lib/ai/types";
 
+interface RFPPrefill {
+  clientName: string;
+  clientAddress: string;
+  projectName: string;
+}
+
 interface RFPUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prefill?: RFPPrefill | null;
 }
 
 type Step = "upload" | "parsing" | "review" | "collaborators" | "creating" | "generating";
@@ -55,7 +62,7 @@ function ProgressStep({ label, status }: { label: string; status: "done" | "acti
   );
 }
 
-export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
+export function RFPUploadDialog({ open, onOpenChange, prefill }: RFPUploadDialogProps) {
   const router = useRouter();
   const { profile } = useAuth();
   const [step, setStep] = useState<Step>("upload");
@@ -135,8 +142,13 @@ export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
         if (parsed.deadline && parsed.deadline.includes("T")) {
           parsed.deadline = parsed.deadline.split("T")[0];
         }
+        // Apply prefilled client info as fallbacks when AI didn't extract them
+        if (prefill) {
+          if (!parsed.client_name) parsed.client_name = prefill.clientName;
+          if (!parsed.client_address) parsed.client_address = prefill.clientAddress;
+        }
         setParsedData(parsed);
-        setProjectName(parsed.project_name || "");
+        setProjectName(parsed.project_name || prefill?.projectName || "");
         setStep("review");
       } catch {
         toast.error("Analysis failed");
@@ -176,6 +188,7 @@ export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
           rfp_requirements: parsedData.requirements,
           deadline: parsedData.deadline,
           collaborator_ids: selectedCollaborators,
+          build_mode: "rfp",
         }),
       });
 

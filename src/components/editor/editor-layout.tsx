@@ -172,6 +172,20 @@ export function EditorLayout({ proposalId, isCollaboratorOnly: isCollaboratorOnl
     return !!meta?.ai_populated;
   }, [proposal?.metadata]);
 
+  // Quick-start guidance for manual proposals (one-time on first load)
+  const manualToastShown = useRef(false);
+  useEffect(() => {
+    if (manualToastShown.current || loading || !proposal) return;
+    const meta = proposal.metadata as Record<string, unknown> | null;
+    if (meta?.build_mode === "manual") {
+      manualToastShown.current = true;
+      toast.info(
+        "Your proposal is ready. Boilerplate sections are pre-filled. Start by selecting team and case studies.",
+        { duration: 6000 }
+      );
+    }
+  }, [loading, proposal]);
+
   // Original mark text snapshots for detecting human edits
   const markSnapshots = useMemo<Record<string, string>>(() => {
     const meta = proposal?.metadata as Record<string, unknown> | null;

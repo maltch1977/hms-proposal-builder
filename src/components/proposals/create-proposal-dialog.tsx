@@ -14,13 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlaceSearch, ManualAddressFields, type AddressFields } from "@/components/ui/address-autocomplete";
-import { Loader2, Copy } from "lucide-react";
+import { Loader2, Copy, FileUp, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import type { SimilarProposal } from "@/lib/ai/types";
+
+type BuildMode = "build_manually" | "upload_rfp";
 
 interface CreateProposalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRequestRfpUpload?: (prefill: { clientName: string; clientAddress: string; projectName: string }) => void;
 }
 
 const emptyAddress: AddressFields = { street: "", city: "", state: "", zip: "" };
@@ -36,6 +39,7 @@ function formatAddress(addr: AddressFields): string {
 export function CreateProposalDialog({
   open,
   onOpenChange,
+  onRequestRfpUpload,
 }: CreateProposalDialogProps) {
   const [title, setTitle] = useState("");
   const [clientName, setClientName] = useState("");
@@ -45,6 +49,7 @@ export function CreateProposalDialog({
   const [loading, setLoading] = useState(false);
   const [similarProposals, setSimilarProposals] = useState<SimilarProposal[]>([]);
   const [checkingSimilar, setCheckingSimilar] = useState(false);
+  const [buildMode, setBuildMode] = useState<BuildMode>("build_manually");
   const router = useRouter();
 
   const resetAll = () => {
@@ -54,6 +59,7 @@ export function CreateProposalDialog({
     setManualMode(false);
     setTitle("");
     setSimilarProposals([]);
+    setBuildMode("build_manually");
   };
 
   const checkSimilarProposals = async (client: string) => {
@@ -112,6 +118,7 @@ export function CreateProposalDialog({
           title,
           client_name: clientName,
           client_address: formatAddress(address),
+          build_mode: "manual",
         }),
       });
 
@@ -278,10 +285,52 @@ export function CreateProposalDialog({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && title) {
                     e.preventDefault();
-                    handleCreate();
+                    if (buildMode === "build_manually") handleCreate();
                   }
                 }}
               />
+            </div>
+          )}
+
+          {clientConfirmed && title && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">How would you like to start?</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBuildMode("build_manually")}
+                  className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-colors ${
+                    buildMode === "build_manually"
+                      ? "border-hms-navy bg-hms-navy/5"
+                      : "border-border hover:border-muted-foreground/30"
+                  }`}
+                >
+                  <PenLine className={`h-5 w-5 ${buildMode === "build_manually" ? "text-hms-navy" : "text-muted-foreground"}`} />
+                  <span className={`text-sm font-medium ${buildMode === "build_manually" ? "text-hms-navy" : "text-foreground"}`}>
+                    Build Manually
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Start with blank sections and write your own content
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBuildMode("upload_rfp")}
+                  className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-colors ${
+                    buildMode === "upload_rfp"
+                      ? "border-hms-navy bg-hms-navy/5"
+                      : "border-border hover:border-muted-foreground/30"
+                  }`}
+                >
+                  <FileUp className={`h-5 w-5 ${buildMode === "upload_rfp" ? "text-hms-navy" : "text-muted-foreground"}`} />
+                  <span className={`text-sm font-medium ${buildMode === "upload_rfp" ? "text-hms-navy" : "text-foreground"}`}>
+                    Upload RFP
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Upload an RFP document and auto-generate content with AI
+                  </span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -295,17 +344,39 @@ export function CreateProposalDialog({
               >
                 Cancel
               </Button>
-              <Button
-                type="button"
-                className="bg-hms-navy hover:bg-hms-navy-light"
-                disabled={loading || !title}
-                onClick={handleCreate}
-              >
-                {loading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Create Proposal
-              </Button>
+              {buildMode === "build_manually" ? (
+                <Button
+                  type="button"
+                  className="bg-hms-navy hover:bg-hms-navy-light"
+                  disabled={loading || !title}
+                  onClick={handleCreate}
+                >
+                  {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Create Proposal
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  className="bg-hms-navy hover:bg-hms-navy-light"
+                  disabled={!title}
+                  onClick={() => {
+                    if (onRequestRfpUpload) {
+                      onRequestRfpUpload({
+                        clientName,
+                        clientAddress: formatAddress(address),
+                        projectName: title,
+                      });
+                    }
+                    onOpenChange(false);
+                    resetAll();
+                  }}
+                >
+                  <FileUp className="mr-2 h-4 w-4" />
+                  Continue with RFP Upload
+                </Button>
+              )}
             </DialogFooter>
           )}
         </div>
